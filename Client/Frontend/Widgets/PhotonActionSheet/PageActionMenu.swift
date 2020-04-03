@@ -59,6 +59,10 @@ extension PhotonActionSheetProtocol {
             UnifiedTelemetry.recordEvent(category: .action, method: .add, object: .readingListItem, value: .pageActionMenu)
             success(Strings.AppMenuAddToReadingListConfirmMessage)
         }
+        
+        let addToPocket = PhotonActionSheetItem(title: Strings.AppMenuAddToPocketTitleString, iconString: "addToPocket") { _, _ in
+            guard let url = tab.url?.displayURL else { return }
+        }
 
         let bookmarkPage = PhotonActionSheetItem(title: Strings.AppMenuAddBookmarkTitleString, iconString: "menu-Bookmark") { _, _ in
             guard let url = tab.canonicalURL?.displayURL,
@@ -151,7 +155,7 @@ extension PhotonActionSheetProtocol {
             }
         }
 
-        var mainActions = [sharePage]
+        var mainActions = [sharePage,addToPocket]
 
         // Disable bookmarking and reading list if the URL is too long.
         if !tab.urlIsTooLong {
