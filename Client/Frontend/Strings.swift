@@ -812,9 +812,17 @@ extension String {
 
 //Today Widget Strings - [New Search - Private Search]
 extension String {
+<<<<<<< HEAD
     public static let NewPrivateTabButtonLabel = NSLocalizedString("TodayWidget.PrivateTabButtonLabelV1", tableName: "Today", value: "Private Search", comment: "Open New Private Tab button label")
     public static let NewTabButtonLabel = NSLocalizedString("TodayWidget.NewTabButtonLabelV1", tableName: "Today", value: "New Search", comment: "Open New Tab button label")
     public static let GoToCopiedLinkLabel = NSLocalizedString("TodayWidget.GoToCopiedLinkLabelV1", tableName: "Today", value: "Go to copied link", comment: "Go to link pasted on the clipboard")
     public static let GoToCopiedLinkLabelV2 = NSLocalizedString("TodayWidget.GoToCopiedLinkLabelV2", tableName: "Today", value: "Go To\nCopied Link", comment: "Go to link pasted on the clipboard")
     public static let CopiedLinkLabelFromPasteBoard = NSLocalizedString("TodayWidget.CopiedLinkLabelFromPasteBoardV1", tableName: "Today", value: "Copied Link from clipboard", comment: "Copied Link from clipboard displayed")
+=======
+    public static let NewPrivateTabButtonLabel = NSLocalizedString("TodayWidget.NewPrivateTabButtonLabel", tableName: "Today", value: "Private Search", comment: "New Private Tab button label")
+    public static let NewTabButtonLabel = NSLocalizedString("TodayWidget.NewTabButtonLabel", tableName: "Today", value: "New\nSearch", comment: "New Tab button label")
+    public static let GoToCopiedLinkLabel = NSLocalizedString("TodayWidget.GoToCopiedLinkLabel", tableName: "Today", value: "Go to \ncopied link", comment: "Go to link on clipboard")
+    public static let closePrivateTabsButtonLabel = NSLocalizedString("TodayWidget.ClosePrivateTabButtonLabel", tableName: "Today", value: "Close\nprivate tabs", comment: "Close Private Tabs button label")
+    public static let CopiedLinkLabelFromPasteBoard = NSLocalizedString("TodayWidget.CopiedLinkLabelFromPasteBoard", tableName: "Today", value: "Copied Link from clipboard", comment: "Copied Link from clipboard displayed")
+>>>>>>> copied link button can search copied text as well as navigate to copied URLs
 }
