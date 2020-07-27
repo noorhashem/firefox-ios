@@ -30,7 +30,7 @@ class TodayViewController: UIViewController, NCWidgetProviding, TodayWidgetAppea
         label.adjustsFontForContentSizeCategory = true
         return imageButton
     }
-    
+
     fileprivate lazy var newTabButton: ImageButtonWithLabel = {
         let button = setupButtons(buttonLabel: String.NewTabButtonLabel, buttonImageName: "search-button")
         button.addTarget(self, action: #selector(onPressNewTab), forControlEvents: .touchUpInside)
@@ -47,15 +47,15 @@ class TodayViewController: UIViewController, NCWidgetProviding, TodayWidgetAppea
         let button = setupButtons(buttonLabel: String.GoToCopiedLinkLabel, buttonImageName: "go-to-copied-link")
         button.addTarget(self, action: #selector(onPressOpenCopiedLink), forControlEvents: .touchUpInside)
         return button
-        }()
-    
+    }()
+
     //MARK: Feature for V29
     // Close Private tab button in today widget, when clicked, it clears all private browsing tabs from the widget. delayed untill next release V29
     fileprivate lazy var closePrivateTabsButton: ImageButtonWithLabel = {
         let button = setupButtons(buttonLabel: String.closePrivateTabsButtonLabel, buttonImageName: "close-private-tabs")
         button.addTarget(self, action: #selector(onPressClosePrivateTabs), forControlEvents: .touchUpInside)
         return button
-        }()
+    }()
 
     fileprivate lazy var buttonStackView: UIStackView = {
         let stackView = UIStackView()
@@ -114,17 +114,24 @@ class TodayViewController: UIViewController, NCWidgetProviding, TodayWidgetAppea
 
     func adjustFonts() {
         if traitCollection.preferredContentSizeCategory >= .accessibilityMedium {
-            newTabButton.label.font = newTabButton.label.font.withSize(26)
-            newPrivateTabButton.label.font = newPrivateTabButton.label.font.withSize(26)
-            openCopiedLinkButton.label.font = openCopiedLinkButton.label.font.withSize(26)
-            closePrivateTabsButton.label.font = closePrivateTabsButton.label.font.withSize(26)
+            resize(size: 25)
+        } else if traitCollection.preferredContentSizeCategory <= .extraExtraExtraLarge && traitCollection.preferredContentSizeCategory > .extraLarge {
+            resize(size: 16)
+            
+        } else if traitCollection.preferredContentSizeCategory >= .large && traitCollection.preferredContentSizeCategory <= .extraLarge {
+            resize(size: 14)
+        } else if traitCollection.preferredContentSizeCategory == .medium {
+            resize(size: 12)
+        } else if traitCollection.preferredContentSizeCategory >= .extraSmall && traitCollection.preferredContentSizeCategory <= .small {
+            resize(size: 11)
         }
-        else if traitCollection.preferredContentSizeCategory <= .large {
-            newTabButton.label.font = newTabButton.label.font.withSize(14)
-            newPrivateTabButton.label.font = newPrivateTabButton.label.font.withSize(14)
-            openCopiedLinkButton.label.font = openCopiedLinkButton.label.font.withSize(14)
-            closePrivateTabsButton.label.font = closePrivateTabsButton.label.font.withSize(14)
-        }
+    }
+
+    func resize(size: CGFloat) {
+        newTabButton.label.font = newTabButton.label.font.withSize(size)
+        newPrivateTabButton.label.font = newPrivateTabButton.label.font.withSize(size)
+        openCopiedLinkButton.label.font = openCopiedLinkButton.label.font.withSize(size)
+        closePrivateTabsButton.label.font = closePrivateTabsButton.label.font.withSize(size)
     }
 
     func widgetMarginInsets(forProposedMarginInsets defaultMarginInsets: UIEdgeInsets) -> UIEdgeInsets {
