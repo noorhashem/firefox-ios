@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Account
 import Shared
-import FxA
+
 import XCGLogger
 import SwiftyJSON
 
@@ -42,8 +42,8 @@ open class EncryptedJSON {
 
     // For validating HMAC: the raw ciphertext as bytes without decoding.
     fileprivate var ciphertextB64: Data? {
-        if let ct = self["ciphertext"].string {
-            return Bytes.dataFromBase64(ct)
+        if let cipherText = self["ciphertext"].string {
+            return Bytes.dataFromBase64(cipherText)
         }
         return nil
     }
@@ -121,7 +121,7 @@ open class EncryptedJSON {
         if _hmacBytes != nil {
             return _hmacBytes!
         }
-        //NSData(base16EncodedString: self["hmac"].asString!, options: NSDataBase16DecodingOptions.Default)
+        // NSData(base16EncodedString: self["hmac"].asString!, options: NSDataBase16DecodingOptions.Default)
         _hmacBytes = NSData(base16EncodedString: self["hmac"].stringValue, options: []) as Data
         return _hmacBytes!
     }

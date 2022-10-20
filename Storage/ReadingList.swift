@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -15,8 +15,8 @@ let ReadingListDefaultFavorite: Bool = false
 
 public protocol ReadingList {
     func getAvailableRecords() -> Deferred<Maybe<[ReadingListItem]>>
-    @discardableResult func deleteRecord(_ record: ReadingListItem) -> Success
-    func deleteAllRecords() -> Success
+    func getAvailableRecords(completion: @escaping ([ReadingListItem]) -> Void)
+    func deleteRecord(_ record: ReadingListItem, completion: ((Bool) -> Void)?)
     @discardableResult func createRecordWithURL(_ url: String, title: String, addedBy: String) -> Deferred<Maybe<ReadingListItem>>
     func getRecordWithURL(_ url: String) -> Deferred<Maybe<ReadingListItem>>
     @discardableResult func updateRecord(_ record: ReadingListItem, unread: Bool) -> Deferred<Maybe<ReadingListItem>>
@@ -45,7 +45,7 @@ public struct ReadingListItem: Equatable {
     }
 }
 
-public func ==(lhs: ReadingListItem, rhs: ReadingListItem) -> Bool {
+public func == (lhs: ReadingListItem, rhs: ReadingListItem) -> Bool {
     return lhs.id == rhs.id
         && lhs.lastModified == rhs.lastModified
         && lhs.url == rhs.url
@@ -55,4 +55,3 @@ public func ==(lhs: ReadingListItem, rhs: ReadingListItem) -> Bool {
         && lhs.archived == rhs.archived
         && lhs.favorite == rhs.favorite
 }
-

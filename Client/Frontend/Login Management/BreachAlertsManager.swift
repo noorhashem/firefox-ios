@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Storage // or whichever module has the LoginsRecord class
@@ -33,9 +33,7 @@ final public class BreachAlertsManager {
     var client: BreachAlertsClientProtocol
     var profile: Profile!
     private lazy var cacheURL: URL? = {
-        guard let path = try? self.profile.files.getAndEnsureDirectory() else {
-            return nil
-        }
+        guard let path = try? self.profile.files.getAndEnsureDirectory() else { return nil }
         return URL(fileURLWithPath: path, isDirectory: true).appendingPathComponent("breaches.json")
     }()
     private let dateFormatter = DateFormatter()
@@ -63,7 +61,7 @@ final public class BreachAlertsManager {
         // 1b. local file exists, so load from that
         guard let fileData = FileManager.default.contents(atPath: cacheURL.path) else {
             completion(Maybe(failure: BreachAlertsError(description: "failed to get data from breach.json")))
-            Sentry.shared.send(message: "BreachAlerts: failed to get data from breach.json")
+            SentryIntegration.shared.send(message: "BreachAlerts: failed to get data from breach.json")
             try? FileManager.default.removeItem(at: cacheURL) // bad file, so delete it
             self.fetchAndSaveBreaches(completion)
             return
@@ -87,7 +85,7 @@ final public class BreachAlertsManager {
 
         // 3b. should update - check if the etag is different
         client.fetchEtag(endpoint: .breachedAccounts, profile: self.profile) { etag in
-            guard let etag =  etag else {
+            guard let etag = etag else {
                 self.profile.prefs.removeObjectForKey(BreachAlertsClient.etagKey) // bad key, so delete it
                 self.fetchAndSaveBreaches(completion)
                 return
@@ -112,9 +110,9 @@ final public class BreachAlertsManager {
     func findUserBreaches(_ logins: [LoginRecord]) -> Maybe<Set<LoginRecord>> {
         var result = Set<LoginRecord>()
 
-        if self.breaches.count <= 0 {
+        if self.breaches.isEmpty {
             return Maybe(failure: BreachAlertsError(description: "cannot compare to an empty list of breaches"))
-        } else if logins.count <= 0 {
+        } else if logins.isEmpty {
             return Maybe(failure: BreachAlertsError(description: "cannot compare to an empty list of logins"))
         }
 
@@ -178,9 +176,7 @@ final public class BreachAlertsManager {
     }
 
     private func fetchAndSaveBreaches(_ completion: @escaping (Maybe<Set<BreachRecord>>) -> Void) {
-        guard let cacheURL = self.cacheURL else {
-            return
-        }
+        guard let cacheURL = self.cacheURL else { return }
         self.client.fetchData(endpoint: .breachedAccounts, profile: self.profile) { maybeData in
             guard let fetchedData = maybeData.successValue else { return }
             try? FileManager.default.removeItem(atPath: cacheURL.path)

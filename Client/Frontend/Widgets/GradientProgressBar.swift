@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 // ADAPTED FROM:
 //
@@ -45,8 +45,8 @@ open class GradientProgressBar: UIProgressView {
         }
     }
 
-    func setGradientColors(startColor: UIColor, endColor: UIColor) {
-        gradientColors = [startColor, endColor, startColor, endColor, startColor, endColor, startColor].map { $0.cgColor }
+    func setGradientColors(startColor: UIColor, middleColor: UIColor?, endColor: UIColor) {
+        gradientColors = [startColor, middleColor, endColor].compactMap { $0?.cgColor }
         gradientLayer.colors = gradientColors
     }
 
@@ -103,9 +103,7 @@ open class GradientProgressBar: UIProgressView {
     }
 
     func hideProgressBar() {
-        guard progress == 1 else {
-            return
-        }
+        guard progress == 1 else { return }
 
         CATransaction.begin()
         let moveAnimation = CABasicAnimation(keyPath: "position")
@@ -166,7 +164,7 @@ open class GradientProgressBar: UIProgressView {
     }
 
     override open func setProgress(_ progress: Float, animated: Bool) {
-        if progress < self.progress && self.progress != 1 {
+        if progress != 0 && progress < self.progress && self.progress != 1 {
             return
         }
         // Setup animations

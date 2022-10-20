@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -15,9 +15,7 @@ class NewTabHomePageAccessors {
 
     static func getHomePage(_ prefs: Prefs) -> URL? {
         let string = prefs.stringForKey(HomePageConstants.NewTabCustomUrlPrefKey) ?? getDefaultHomePageString(prefs)
-        guard let urlString = string else {
-            return nil
-        }
+        guard let urlString = string else { return nil }
         return URL(string: urlString)
     }
 
@@ -30,10 +28,7 @@ class HomeButtonHomePageAccessors {
 
     static func getHomePage(_ prefs: Prefs) -> URL? {
         let string = prefs.stringForKey(PrefsKeys.HomeButtonHomePageURL)
-        guard let urlString = string else {
-            return nil
-        }
+        guard let urlString = string else { return nil }
         return URL(string: urlString)
     }
 }
-

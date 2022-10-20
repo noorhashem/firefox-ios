@@ -19,8 +19,12 @@ let blocklist = """
 
 let entitylist = """
 {
-    "2leep.com": { "properties": [ "2leep.com" ], "resources": [ "2leep.com" ] },
-    "adnologies": { "properties": [ "adnologies.com", "heias.com" ], "resources": [ "adnologies.com", "heias.com" ] }
+"license": "Copyright 2010-2020 Disconnect, Inc.",
+"entities":
+    {
+        "2leep.com": { "properties": [ "2leep.com" ], "resources": [ "2leep.com" ] },
+        "adnologies": { "properties": [ "adnologies.com", "heias.com" ], "resources": [ "adnologies.com", "heias.com" ] }
+    }
 }
 """
 
@@ -34,7 +38,7 @@ final class ContentBlockerGenTests: XCTestCase {
         let categories = json["categories"]! as! [String: Any]
         let category = categories[CategoryTitle.Advertising.rawValue] as! [Any]
         var result = [String]()
-        category.forEach() {
+        category.forEach {
             result += contentBlocker.handleCategoryItem($0, action: .blockAll)
         }
 
@@ -44,7 +48,9 @@ final class ContentBlockerGenTests: XCTestCase {
         XCTAssert(result.first! == test)
     }
 
+    // swiftlint:disable empty_xctest_method
     static var allTests = [
         ("testParsing", testParsing),
     ]
+    // swiftlint:enable empty_xctest_method
 }

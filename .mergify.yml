@@ -1,0 +1,25 @@
+queue_rules:
+  - name: default
+    conditions:
+      - check-success=Bitrise
+
+pull_request_rules:
+  - name: Resolve conflict
+    conditions:
+      - conflict
+    actions:
+        comment:
+          message: This pull request has conflicts when rebasing. Could you fix it @{{author}}?
+  - name: github-actions
+    conditions:
+      - author=github-actions[bot]
+      - files=bitrise.yml
+      - -files~=^(?!bitrise.yml).+$
+      - head=update-br-new-xcode-version
+    actions:
+      review:
+        type: APPROVE
+        message: Github-action[bot] 💪
+      queue:
+        method: rebase
+        name: default

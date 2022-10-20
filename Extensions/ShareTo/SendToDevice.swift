@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -33,7 +33,7 @@ class SendToDevice: DevicePickerViewControllerDelegate, InstructionsViewControll
 
         let profile = BrowserProfile(localName: "profile")
         profile.sendItem(item, toDevices: devices).uponQueue(.main) { _ in
-            profile._shutdown()
+            profile.shutdown()
             self.finish()
 
             addAppExtensionTelemetryEvent(forMethod: "send-to-device")
@@ -51,7 +51,7 @@ class SendToDevice: DevicePickerViewControllerDelegate, InstructionsViewControll
     private func hasAccount() -> Bool {
         let profile = BrowserProfile(localName: "profile")
         defer {
-            profile._shutdown()
+            profile.shutdown()
         }
         return profile.hasAccount()
     }

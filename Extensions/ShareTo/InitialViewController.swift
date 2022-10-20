@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import SnapKit
@@ -66,7 +66,7 @@ class EmbeddedNavController {
             let shrinkage = UX.navBarLandscapeShrinkage + (UX.numberOfActionRows + 1 /*one info row*/) * UX.perRowShrinkageForLandscape
             updatedHeight = isLandscapeSmallScreen(forTraitCollection) ? UX.topViewHeight - shrinkage : UX.topViewHeight
         } else {
-            updatedHeight = forTraitCollection.verticalSizeClass == .compact ? UX.topViewHeight - UX.navBarLandscapeShrinkage :  UX.topViewHeight
+            updatedHeight = forTraitCollection.verticalSizeClass == .compact ? UX.topViewHeight - UX.navBarLandscapeShrinkage : UX.topViewHeight
         }
         heightConstraint.update(offset: updatedHeight)
     }
@@ -85,28 +85,25 @@ class InitialViewController: UIViewController {
     override func viewDidLoad() {
         UIDevice.current.beginGeneratingDeviceOrientationNotifications()
         super.viewDidLoad()
-        if #available(iOS 13, *) {
-            view.backgroundColor = .clear
 
-            // iPad drop shadow removal hack!
-            var view = parent?.view
-            while view != nil, view!.classForCoder.description() != "UITransitionView" {
-                view = view?.superview
-            }
-            if let view = view {
-                // For reasons unknown, if the alpha is < 1.0, the drop shadow is not shown
-                view.alpha = 0.99
-            }
+        view.backgroundColor = .clear
 
-        } else {
-            view.backgroundColor = UIColor(white: 0.0, alpha: UX.alphaForFullscreenOverlay)
+        // iPad drop shadow removal hack!
+        var view = parent?.view
+        while view != nil, view!.classForCoder.description() != "UITransitionView" {
+            view = view?.superview
         }
-        view.alpha = 0
+        if let view = view {
+            // For reasons unknown, if the alpha is < 1.0, the drop shadow is not shown
+            view.alpha = 0.99
+        }
+
+        self.view.alpha = 0
 
         getShareItem().uponQueue(.main) { shareItem in
             guard let shareItem = shareItem else {
-                let alert = UIAlertController(title: Strings.SendToErrorTitle, message: Strings.SendToErrorMessage, preferredStyle: .alert)
-                alert.addAction(UIAlertAction(title: Strings.SendToErrorOKButton, style: .default) { _ in self.finish(afterDelay: 0) })
+                let alert = UIAlertController(title: .SendToErrorTitle, message: .SendToErrorMessage, preferredStyle: .alert)
+                alert.addAction(UIAlertAction(title: .SendToErrorOKButton, style: .default) { _ in self.finish(afterDelay: 0) })
                 self.present(alert, animated: true, completion: nil)
                 return
             }
@@ -161,11 +158,15 @@ class InitialViewController: UIViewController {
 
 extension InitialViewController: ShareControllerDelegate {
     func finish(afterDelay: TimeInterval) {
-        UIView.animate(withDuration: 0.2, delay: afterDelay, options: [], animations: {
-            self.view.alpha = 0
-        }, completion: { _ in
-            self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
-        })
+        UIView.animate(
+            withDuration: 0.2,
+            delay: afterDelay,
+            options: [],
+            animations: {
+                self.view.alpha = 0
+            }, completion: { _ in
+                self.extensionContext?.completeRequest(returningItems: [], completionHandler: nil)
+            })
     }
 
     func getValidExtensionContext() -> NSExtensionContext? {
@@ -178,4 +179,3 @@ extension InitialViewController: ShareControllerDelegate {
         embedController?.navigationController.view.alpha = 0
     }
 }
-

@@ -4,8 +4,10 @@ anp
 ar
 ast
 az
+be
 bg
 bn
+bo
 br
 bs
 ca
@@ -24,6 +26,7 @@ es
 es-AR
 es-CL
 es-MX
+et
 eu
 fa
 fi
@@ -70,8 +73,9 @@ pt-PT
 rm
 ro
 ru
-sat-Olck
+sat
 ses
+si
 sk
 sl
 sq
@@ -82,10 +86,10 @@ te
 th
 tl
 tr
+tt
 uk
 ur
 uz
 vi
-zgh
 zh-CN
 zh-TW

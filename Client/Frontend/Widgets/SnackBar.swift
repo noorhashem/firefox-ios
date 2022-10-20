@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import SnapKit
@@ -112,7 +112,7 @@ class SnackBar: UIView {
     init(text: String, img: UIImage?, snackbarClassIdentifier: String? = nil) {
         self.snackbarClassIdentifier = snackbarClassIdentifier ?? text
         super.init(frame: .zero)
-        imageView.image = img ?? UIImage(named: "defaultFavicon")
+        imageView.image = img ?? UIImage(named: ImageIdentifiers.defaultFavicon)?.withRenderingMode(.alwaysOriginal)
         textLabel.text = text
         setup()
     }
@@ -148,7 +148,7 @@ class SnackBar: UIView {
         }
 
         backgroundColor = UIColor.clear
-        self.clipsToBounds = true //overridden by masksToBounds = false
+        self.clipsToBounds = true // overridden by masksToBounds = false
         self.layer.borderWidth = SnackBarUX.BorderWidth
         self.layer.borderColor = UIColor.theme.snackbar.border.cgColor
         self.layer.cornerRadius = 8
@@ -175,7 +175,7 @@ class SnackBar: UIView {
             make.top.equalTo(titleView.snp.bottom).offset(UIConstants.DefaultPadding)
             make.bottom.equalTo(self.snp.bottom)
             make.leading.trailing.equalTo(self)
-            if self.buttonsView.subviews.count > 0 {
+            if !self.buttonsView.subviews.isEmpty {
                 make.height.equalTo(UIConstants.SnackbarButtonHeight)
             } else {
                 make.height.equalTo(0)
@@ -222,13 +222,15 @@ class TimerSnackBar: SnackBar {
     }
 
     static func showAppStoreConfirmationBar(forTab tab: Tab, appStoreURL: URL, completion: @escaping (Bool) -> Void) {
-        let bar = TimerSnackBar(text: Strings.ExternalLinkAppStoreConfirmationTitle, img: UIImage(named: "defaultFavicon"))
-        let openAppStore = SnackButton(title: Strings.AppStoreString, accessibilityIdentifier: "ConfirmOpenInAppStore", bold: true) { bar in
+        let bar = TimerSnackBar(
+            text: .ExternalLinkAppStoreConfirmationTitle,
+            img: UIImage(named: ImageIdentifiers.defaultFavicon)?.withRenderingMode(.alwaysOriginal))
+        let openAppStore = SnackButton(title: .AppStoreString, accessibilityIdentifier: "ConfirmOpenInAppStore", bold: true) { bar in
             tab.removeSnackbar(bar)
             UIApplication.shared.open(appStoreURL, options: [:])
             completion(true)
         }
-        let cancelButton = SnackButton(title: Strings.NotNowString, accessibilityIdentifier: "CancelOpenInAppStore", bold: false) { bar in
+        let cancelButton = SnackButton(title: .NotNowString, accessibilityIdentifier: "CancelOpenInAppStore", bold: false) { bar in
             tab.removeSnackbar(bar)
             completion(false)
         }

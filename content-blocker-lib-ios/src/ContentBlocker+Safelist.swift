@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import WebKit
 
@@ -17,9 +17,7 @@ struct SafelistedDomains {
 extension ContentBlocker {
 
     func safelistFileURL() -> URL? {
-        guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else {
-            return nil
-        }
+        guard let dir = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return nil }
         return dir.appendingPathComponent("safelist")
     }
 
@@ -74,9 +72,7 @@ extension ContentBlocker {
     }
     // Ensure domains used for safelisting are standardized by using this function.
     func safelistableDomain(fromUrl url: URL) -> String? {
-        guard let domain = url.host, !domain.isEmpty else {
-            return nil
-        }
+        guard let domain = url.host, !domain.isEmpty else { return nil }
         return domain
     }
 

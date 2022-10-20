@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import WebKit
 import Account
@@ -8,6 +8,7 @@ import Shared
 
 enum DismissType {
     case dismiss
+    case popToTabTray
     case popToRootVC
 }
 
@@ -15,12 +16,14 @@ enum DismissType {
  Show the FxA web content for signing in, signing up, or showing FxA settings.
  Messaging from the website to native is with WKScriptMessageHandler.
  */
-class FxAWebViewController: UIViewController, WKNavigationDelegate {
+class FxAWebViewController: UIViewController {
     fileprivate let dismissType: DismissType
     fileprivate var webView: WKWebView
     /// Used to show a second WKWebView to browse help links.
     fileprivate var helpBrowser: WKWebView?
     fileprivate let viewModel: FxAWebViewModel
+    /// Closure for dismissing higher up FxA Sign in view controller
+    var shouldDismissFxASignInViewController: (() -> Void)?
 
     /**
      init() FxAWebView.
@@ -32,17 +35,17 @@ class FxAWebViewController: UIViewController, WKNavigationDelegate {
      */
     init(pageType: FxAPageType, profile: Profile, dismissalStyle: DismissType, deepLinkParams: FxALaunchParams?) {
         self.viewModel = FxAWebViewModel(pageType: pageType, profile: profile, deepLinkParams: deepLinkParams)
-        
+
         self.dismissType = dismissalStyle
 
         let contentController = WKUserContentController()
         viewModel.setupUserScript(for: contentController)
- 
+
         let config = WKWebViewConfiguration()
         config.userContentController = contentController
         webView = WKWebView(frame: .zero, configuration: config)
         webView.allowsLinkPreview = false
-        webView.accessibilityLabel = NSLocalizedString("Web content", comment: "Accessibility label for the main web content view")
+        webView.accessibilityLabel = .FxAWebContentAccessibilityLabel
         webView.scrollView.bounces = false  // Don't allow overscrolling.
         webView.customUserAgent = FxAWebViewModel.mobileUserAgent
 
@@ -61,19 +64,21 @@ class FxAWebViewController: UIViewController, WKNavigationDelegate {
         super.viewDidLoad()
         setup()
     }
-    
+
     private func setup() {
         webView.navigationDelegate = self
         view = webView
-        
+        webView.addObserver(self, forKeyPath: KVOConstants.URL.rawValue, options: .new, context: nil)
         viewModel.setupFirstPage { [weak self] (request, telemetryEventMethod) in
             if let method = telemetryEventMethod {
                 TelemetryWrapper.recordEvent(category: .firefoxAccount, method: method, object: .accountConnected)
             }
-            self?.webView.load(request)
+
+            self?.loadRequest(request, isPairing: telemetryEventMethod == .qrPairing)
         }
-        
+
         viewModel.onDismissController = { [weak self] in
+            self?.endPairingConnectionBackgroundTask()
             self?.dismiss(animated: true)
         }
     }
@@ -84,30 +89,60 @@ class FxAWebViewController: UIViewController, WKNavigationDelegate {
     override func dismiss(animated: Bool, completion: (() -> Void)? = nil) {
         if dismissType == .dismiss {
             super.dismiss(animated: animated, completion: completion)
+        } else if dismissType == .popToTabTray {
+            shouldDismissFxASignInViewController?()
         } else {
             navigationController?.popToRootViewController(animated: true)
             completion?()
         }
     }
 
+    deinit {
+        webView.removeObserver(self, forKeyPath: KVOConstants.URL.rawValue)
+        endPairingConnectionBackgroundTask()
+    }
+
+    // MARK: Background task
+
+    /// In case the application is set to background while pairing with a QR code, we need
+    /// to ensure the application can keep the connection alive a little longer so pairing can be completed
+    private let backgroundTaskName = "moz.org.sync.qrcode.auth"
+    private var backgroundTaskID = UIBackgroundTaskIdentifier(rawValue: 0)
+
+    private func loadRequest(_ request: URLRequest, isPairing: Bool) {
+        // Only start background task on pairing request
+        guard isPairing else {
+            webView.load(request)
+            return
+        }
+
+        backgroundTaskID = UIApplication.shared.beginBackgroundTask(withName: backgroundTaskName) { [weak self] in
+            self?.webView.stopLoading()
+            self?.endPairingConnectionBackgroundTask()
+        }
+
+        webView.load(request)
+    }
+
+    private func endPairingConnectionBackgroundTask() {
+        UIApplication.shared.endBackgroundTask(backgroundTaskID)
+        backgroundTaskID = UIBackgroundTaskIdentifier.invalid
+    }
+}
+
+// MARK: - WKNavigationDelegate
+extension FxAWebViewController: WKNavigationDelegate {
+
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         let decision = viewModel.shouldAllowRedirectAfterLogIn(basedOn: navigationAction.request.url)
         decisionHandler(decision)
     }
-}
 
-extension FxAWebViewController: WKScriptMessageHandler {
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        viewModel.handle(scriptMessage: message)
-    }
-}
-
-extension FxAWebViewController {
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         let hideLongpress = "document.body.style.webkitTouchCallout='none';"
-        webView.evaluateJavaScript(hideLongpress)
+        webView.evaluateJavascriptInDefaultContentWorld(hideLongpress)
 
-        //The helpBrowser shows the current URL in the navbar, the main fxa webview does not.
+        // The helpBrowser shows the current URL in the navbar, the main fxa webview does not.
         guard webView !== helpBrowser else {
             navigationItem.title = viewModel.composeTitle(basedOn: webView.url, hasOnlySecureContent: webView.hasOnlySecureContent)
             return
@@ -117,13 +152,19 @@ extension FxAWebViewController {
     }
 }
 
+// MARK: - WKScriptMessageHandler
+extension FxAWebViewController: WKScriptMessageHandler {
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        viewModel.handle(scriptMessage: message)
+    }
+}
+
+// MARK: - WKUIDelegate
 extension FxAWebViewController: WKUIDelegate {
-    
+
     /// Blank target links (support links) will create a 2nd webview (the `helpBrowser`) to browse. This webview will have a close button in the navigation bar to go back to the main fxa webview.
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        guard helpBrowser == nil else {
-            return nil
-        }
+        guard helpBrowser == nil else { return nil }
         let f = webView.frame
         let wv = WKWebView(frame: CGRect(width: f.width, height: f.height), configuration: configuration)
         helpBrowser?.load(navigationAction.request)
@@ -131,24 +172,28 @@ extension FxAWebViewController: WKUIDelegate {
         helpBrowser = wv
         helpBrowser?.navigationDelegate = self
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.BackTitle, style: .plain, target: self, action: #selector(closeHelpBrowser))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: AccessibilityIdentifiers.GeneralizedIdentifiers.back, style: .plain, target: self, action: #selector(closeHelpBrowser))
 
         return helpBrowser
     }
 
     @objc func closeHelpBrowser() {
-        UIView.animate(withDuration: 0.2, animations: {
-            self.helpBrowser?.alpha = 0
-        }, completion: {_ in
-            self.helpBrowser?.removeFromSuperview()
-            self.helpBrowser = nil
-        })
+        UIView.animate(
+            withDuration: 0.2,
+            animations: {
+                self.helpBrowser?.alpha = 0
+            }, completion: {_ in
+                self.helpBrowser?.removeFromSuperview()
+                self.helpBrowser = nil
+            })
 
         navigationItem.title = nil
         self.navigationItem.leftBarButtonItem = nil
         self.navigationItem.hidesBackButton = false
     }
 }
+
+// MARK: - WKScriptMessageHandleDelegate
 
 // WKScriptMessageHandleDelegate uses for holding weak `self` to prevent retain cycle.
 // self - webview - configuration
@@ -162,9 +207,38 @@ private class WKScriptMessageHandleDelegate: NSObject, WKScriptMessageHandler {
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let delegate = delegate else {
+        guard let delegate = delegate else { return }
+        delegate.userContentController(userContentController, didReceive: message)
+    }
+}
+
+// MARK: - Observe value
+extension FxAWebViewController {
+
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?,
+                               change: [NSKeyValueChangeKey: Any]?,
+                               context: UnsafeMutableRawPointer?) {
+        guard let kp = keyPath,
+              let path = KVOConstants(rawValue: kp)
+        else {
+            sendSentryObserveValueError(forKeyPath: keyPath)
             return
         }
-        delegate.userContentController(userContentController, didReceive: message)
+
+        switch path {
+        case .URL:
+            if let flow = viewModel.fxAWebViewTelemetry.getFlowFromUrl(fxaUrl: webView.url) {
+                viewModel.fxAWebViewTelemetry.recordTelemetry(for: FxAFlow.startedFlow(type: flow))
+            }
+        default:
+            sendSentryObserveValueError(forKeyPath: keyPath)
+        }
+    }
+
+    private func sendSentryObserveValueError(forKeyPath keyPath: String?) {
+        SentryIntegration.shared.send(message: "FxA webpage unhandled KVO",
+                                      tag: .rustLog,
+                                      severity: .error,
+                                      description: "Unhandled KVO key: \(keyPath ?? "nil")")
     }
 }

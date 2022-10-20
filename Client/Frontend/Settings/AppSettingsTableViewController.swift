@@ -1,45 +1,103 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
-import Account
+
+enum AppSettingsDeeplinkOption {
+    case contentBlocker
+    case customizeHomepage
+    case customizeTabs
+    case customizeToolbar
+    case customizeTopSites
+    case wallpaper
+}
 
 /// App Settings Screen (triggered by tapping the 'Gear' in the Tab Tray Controller)
-class AppSettingsTableViewController: SettingsTableViewController {
-    var showContentBlockerSetting = false
+class AppSettingsTableViewController: SettingsTableViewController, FeatureFlaggable {
 
+    // MARK: - Properties
+    var deeplinkTo: AppSettingsDeeplinkOption?
+
+    // MARK: - Initializers
+    init(with profile: Profile,
+         and tabManager: TabManager,
+         delegate: SettingsDelegate?,
+         deeplinkingTo destination: AppSettingsDeeplinkOption? = nil) {
+        self.deeplinkTo = destination
+
+        super.init()
+        self.profile = profile
+        self.tabManager = tabManager
+        self.settingsDelegate = delegate
+    }
+
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - View lifecycles
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        navigationItem.title = NSLocalizedString("Settings", comment: "Title in the settings view controller title bar")
+        navigationItem.title = String.AppSettingsTitle
         navigationItem.rightBarButtonItem = UIBarButtonItem(
-            title: NSLocalizedString("Done", comment: "Done button on left side of the Settings view controller title bar"),
+            title: .AppSettingsDone,
             style: .done,
-            target: navigationController, action: #selector((navigationController as! ThemedNavigationController).done))
+            target: navigationController,
+            action: #selector((navigationController as! ThemedNavigationController).done))
         navigationItem.rightBarButtonItem?.accessibilityIdentifier = "AppSettingsTableViewController.navigationItem.leftBarButtonItem"
 
         tableView.accessibilityIdentifier = "AppSettingsTableViewController.tableView"
 
         // Refresh the user's FxA profile upon viewing settings. This will update their avatar,
         // display name, etc.
-        ////profile.rustAccount.refreshProfile()
+        //// profile.rustAccount.refreshProfile()
 
-        if showContentBlockerSetting {
-            let viewController = ContentBlockerSettingViewController(prefs: profile.prefs)
-            viewController.profile = profile
+        checkForDeeplinkSetting()
+    }
+
+    private func checkForDeeplinkSetting() {
+        guard let deeplink = deeplinkTo else { return }
+        var viewController: SettingsTableViewController
+
+        switch deeplink {
+        case .contentBlocker:
+            viewController = ContentBlockerSettingViewController(prefs: profile.prefs)
             viewController.tabManager = tabManager
-            navigationController?.pushViewController(viewController, animated: false)
-            // Add a done button from this view
-            viewController.navigationItem.rightBarButtonItem = navigationItem.rightBarButtonItem
+
+        case .customizeHomepage:
+            viewController = HomePageSettingViewController(prefs: profile.prefs)
+
+        case .customizeTabs:
+            viewController = TabsSettingsViewController()
+
+        case .customizeToolbar:
+            let viewModel = SearchBarSettingsViewModel(prefs: profile.prefs)
+            viewController = SearchBarSettingsViewController(viewModel: viewModel)
+
+        case .wallpaper:
+            let wallpaperManager = WallpaperManager()
+            if wallpaperManager.canSettingsBeShown {
+                let viewModel = WallpaperSettingsViewModel(wallpaperManager: wallpaperManager, tabManager: tabManager)
+                let wallpaperVC = WallpaperSettingsViewController(viewModel: viewModel)
+                navigationController?.pushViewController(wallpaperVC, animated: true)
+            }
+            return
+
+        case .customizeTopSites:
+            viewController = TopSitesSettingsViewController()
         }
+
+        viewController.profile = profile
+        navigationController?.pushViewController(viewController, animated: false)
+        // Add a done button from this view
+        viewController.navigationItem.rightBarButtonItem = navigationItem.rightBarButtonItem
     }
 
     override func generateSettings() -> [SettingSection] {
         var settings = [SettingSection]()
-
-        let privacyTitle = NSLocalizedString("Privacy", comment: "Privacy section title")
 
         let prefs = profile.prefs
         var generalSettings: [Setting] = [
@@ -48,12 +106,23 @@ class AppSettingsTableViewController: SettingsTableViewController {
             HomeSetting(settings: self),
             OpenWithSetting(settings: self),
             ThemeSetting(settings: self),
-            BoolSetting(prefs: prefs, prefKey: PrefsKeys.KeyBlockPopups, defaultValue: true,
-                        titleText: NSLocalizedString("Block Pop-up Windows", comment: "Block pop-up windows setting")),
+            SiriPageSetting(settings: self),
+            BoolSetting(
+                prefs: prefs,
+                prefKey: PrefsKeys.KeyBlockPopups,
+                defaultValue: true,
+                titleText: .AppSettingsBlockPopups),
+            NoImageModeSetting(settings: self)
            ]
 
-        if #available(iOS 12.0, *) {
-            generalSettings.insert(SiriPageSetting(settings: self), at: 5)
+        if SearchBarSettingsViewModel.isEnabled {
+            generalSettings.insert(SearchBarSetting(settings: self), at: 5)
+        }
+
+        let tabTrayGroupsAreBuildActive = featureFlags.isFeatureEnabled(.tabTrayGroups, checking: .buildOnly)
+        let inactiveTabsAreBuildActive = featureFlags.isFeatureEnabled(.inactiveTabs, checking: .buildOnly)
+        if tabTrayGroupsAreBuildActive || inactiveTabsAreBuildActive {
+            generalSettings.insert(TabsSetting(), at: 3)
         }
 
         let accountChinaSyncSetting: [Setting]
@@ -70,17 +139,30 @@ class AppSettingsTableViewController: SettingsTableViewController {
         // be changed.
 
         generalSettings += [
-            BoolSetting(prefs: prefs, prefKey: "showClipboardBar", defaultValue: false,
-                        titleText: Strings.SettingsOfferClipboardBarTitle,
-                        statusText: Strings.SettingsOfferClipboardBarStatus),
-            BoolSetting(prefs: prefs, prefKey: PrefsKeys.ContextMenuShowLinkPreviews, defaultValue: true,
-                        titleText: Strings.SettingsShowLinkPreviewsTitle,
-                        statusText: Strings.SettingsShowLinkPreviewsStatus)
+            BoolSetting(
+                prefs: prefs,
+                prefKey: "showClipboardBar",
+                defaultValue: false,
+                titleText: .SettingsOfferClipboardBarTitle,
+                statusText: .SettingsOfferClipboardBarStatus),
+            BoolSetting(
+                prefs: prefs,
+                prefKey: PrefsKeys.ContextMenuShowLinkPreviews,
+                defaultValue: true,
+                titleText: .SettingsShowLinkPreviewsTitle,
+                statusText: .SettingsShowLinkPreviewsStatus)
         ]
 
-        let accountSectionTitle = NSAttributedString(string: Strings.FxAFirefoxAccount)
+        if #available(iOS 14.0, *) {
+            settings += [
+                SettingSection(footerTitle: NSAttributedString(string: String.FirefoxHomepage.HomeTabBanner.EvergreenMessage.HomeTabBannerDescription),
+                               children: [DefaultBrowserSetting()])
+            ]
+        }
 
-        let footerText = !profile.hasAccount() ? NSAttributedString(string: Strings.FxASyncUsageDetails) : nil
+        let accountSectionTitle = NSAttributedString(string: .FxAFirefoxAccount)
+
+        let footerText = !profile.hasAccount() ? NSAttributedString(string: .Settings.Sync.ButtonDescription) : nil
         settings += [
             SettingSection(title: accountSectionTitle, footerTitle: footerText, children: [
                 // Without a Firefox Account:
@@ -91,11 +173,10 @@ class AppSettingsTableViewController: SettingsTableViewController {
                 SyncNowSetting(settings: self)
             ] + accountChinaSyncSetting )]
 
-        settings += [ SettingSection(title: NSAttributedString(string: Strings.SettingsGeneralSectionTitle), children: generalSettings)]
+        settings += [ SettingSection(title: NSAttributedString(string: .SettingsGeneralSectionTitle), children: generalSettings)]
 
         var privacySettings = [Setting]()
         privacySettings.append(LoginsSetting(settings: self, delegate: settingsDelegate))
-        privacySettings.append(TouchIDPasscodeSetting(settings: self))
 
         privacySettings.append(ClearPrivateDataSetting(settings: self))
 
@@ -103,8 +184,8 @@ class AppSettingsTableViewController: SettingsTableViewController {
             BoolSetting(prefs: prefs,
                 prefKey: "settings.closePrivateTabs",
                 defaultValue: false,
-                titleText: NSLocalizedString("Close Private Tabs", tableName: "PrivateBrowsing", comment: "Setting for closing private tabs"),
-                statusText: NSLocalizedString("When Leaving Private Browsing", tableName: "PrivateBrowsing", comment: "Will be displayed in Settings under 'Close Private Tabs'"))
+                titleText: .AppSettingsClosePrivateTabsTitle,
+                statusText: .AppSettingsClosePrivateTabsDescription)
         ]
 
         privacySettings.append(ContentBlockerSetting(settings: self))
@@ -114,14 +195,16 @@ class AppSettingsTableViewController: SettingsTableViewController {
         ]
 
         settings += [
-            SettingSection(title: NSAttributedString(string: privacyTitle), children: privacySettings),
-            SettingSection(title: NSAttributedString(string: NSLocalizedString("Support", comment: "Support section title")), children: [
+            SettingSection(title: NSAttributedString(string: .AppSettingsPrivacyTitle), children: privacySettings),
+            SettingSection(title: NSAttributedString(string: .AppSettingsSupport), children: [
                 ShowIntroductionSetting(settings: self),
                 SendFeedbackSetting(),
                 SendAnonymousUsageDataSetting(prefs: prefs, delegate: settingsDelegate),
+                StudiesToggleSetting(prefs: prefs, delegate: settingsDelegate),
                 OpenSupportPageSetting(delegate: settingsDelegate),
             ]),
-            SettingSection(title: NSAttributedString(string: NSLocalizedString("About", comment: "About settings section title")), children: [
+            SettingSection(title: NSAttributedString(string: .AppSettingsAbout), children: [
+                AppStoreReviewSetting(),
                 VersionSetting(settings: self),
                 LicenseAndAcknowledgementsSetting(),
                 YourRightsSetting(),
@@ -133,12 +216,14 @@ class AppSettingsTableViewController: SettingsTableViewController {
                 ForgetSyncAuthStateDebugSetting(settings: self),
                 SentryIDSetting(settings: self),
                 ChangeToChinaSetting(settings: self),
-                ToggleOnboarding(settings: self),
                 ShowEtpCoverSheet(settings: self),
-                ToggleOnboarding(settings: self),
-                LeanplumStatus(settings: self),
-                ClearOnboardingABVariables(settings: self),
-                ToggleNewTabToolbarButton(settings: self)
+                TogglePullToRefresh(settings: self),
+                ResetWallpaperOnboardingPage(settings: self),
+                ToggleInactiveTabs(settings: self),
+                ToggleHistoryGroups(settings: self),
+                ResetContextualHints(settings: self),
+                OpenFiftyTabsDebugOption(settings: self),
+                ExperimentsSettings(settings: self)
             ])]
 
         return settings

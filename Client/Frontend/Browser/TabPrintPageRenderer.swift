@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -27,8 +27,8 @@ class TabPrintPageRenderer: UIPrintPageRenderer {
         self.footerHeight = PrintedPageUX.PageMarginScale * PrintedPageUX.PageInsets
         self.headerHeight = PrintedPageUX.PageMarginScale * PrintedPageUX.PageInsets
 
-        if let tab = self.tab {
-            let formatter = tab.webView!.viewPrintFormatter()
+        if let tab = self.tab, let webview = tab.webView {
+            let formatter = webview.viewPrintFormatter()
             formatter.perPageContentInsets = UIEdgeInsets(top: PrintedPageUX.PageInsets, left: PrintedPageUX.PageInsets, bottom: PrintedPageUX.PageInsets, right: PrintedPageUX.PageInsets)
             addPrintFormatter(formatter, startingAtPageAt: 0)
         }
@@ -48,7 +48,7 @@ class TabPrintPageRenderer: UIPrintPageRenderer {
 
     override func drawHeaderForPage(at pageIndex: Int, in headerRect: CGRect) {
         let headerInsets = UIEdgeInsets(top: headerRect.minY, left: PrintedPageUX.PageInsets, bottom: paperRect.maxY - headerRect.maxY, right: PrintedPageUX.PageInsets)
-        let headerRect =  paperRect.inset(by: headerInsets)
+        let headerRect = paperRect.inset(by: headerInsets)
 
         // page title on left
         self.drawTextAtPoint(tab!.displayTitle, rect: headerRect, onLeft: true)

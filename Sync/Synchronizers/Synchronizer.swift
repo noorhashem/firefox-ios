@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -13,7 +13,7 @@ private let log = Logger.syncLogger
  * This exists to pass in external context: e.g., the UIApplication can
  * expose notification functionality in this way.
  */
-public protocol SyncDelegate {
+public protocol SyncDelegate: AnyObject {
     func displaySentTab(for url: URL, title: String, from deviceName: String?)
     // TODO: storage.
 }
@@ -33,15 +33,6 @@ public protocol SyncDelegate {
  */
 public protocol ResettableSynchronizer {
     static func resetSynchronizerWithStorage(_ storage: ResettableSyncStorage, basePrefs: Prefs, collection: String) -> Success
-}
-
-/**
- * This is a delegate that allows synchronizers to notify other devices in the Sync account
- * that a collection changed.
- */
-public protocol CollectionChangedNotifier {
-    func notify(deviceIDs: [GUID], collectionsChanged collections: [String], reason: String) -> Success
-    func notifyAll(collectionsChanged collections: [String], reason: String) -> Success
 }
 
 // TODO: return values?
@@ -126,17 +117,17 @@ public enum SyncNotStartedReason {
             return "sync.not_started.reason.no_account"
         case .offline:
             return "sync.not_started.reason.offline"
-        case .backoff(_):
+        case .backoff:
             return "sync.not_started.reason.backoff"
-        case .engineRemotelyNotEnabled(_):
+        case .engineRemotelyNotEnabled:
             return "sync.not_started.reason.remotely_not_enabled"
-        case .engineFormatOutdated(_):
+        case .engineFormatOutdated:
             return "sync.not_started.reason.format_outdated"
-        case .engineFormatTooNew(_):   // This'll disappear eventually; we'll wipe the server and upload m/g.
+        case .engineFormatTooNew:   // This'll disappear eventually; we'll wipe the server and upload m/g.
             return "sync.not_started.reason.format_too_new"
-        case .storageFormatOutdated(_):
+        case .storageFormatOutdated:
             return "sync.not_started.reason.storage_format_outdated"
-        case .storageFormatTooNew(_):  // This'll disappear eventually; we'll wipe the server and upload m/g.
+        case .storageFormatTooNew:  // This'll disappear eventually; we'll wipe the server and upload m/g.
             return "sync.not_started.reason.storage_format_too_new"
         case .stateMachineNotReady:                // Because we're not done implementing.
             return "sync.not_started.reason.state_machine_not_ready"
@@ -260,18 +251,18 @@ open class BaseCollectionSynchronizer {
 open class TimestampedSingleCollectionSynchronizer: BaseCollectionSynchronizer, SingleCollectionSynchronizer {
 
     var lastFetched: Timestamp {
-        set(value) {
-            self.prefs.setLong(value, forKey: "lastFetched")
+        get {
+            return prefs.unsignedLongForKey("lastFetched") ?? 0
         }
 
-        get {
-            return self.prefs.unsignedLongForKey("lastFetched") ?? 0
+        set {
+            prefs.setLong(newValue, forKey: "lastFetched")
         }
     }
 
     func setTimestamp(_ timestamp: Timestamp) {
         log.debug("Setting post-upload lastFetched to \(timestamp).")
-        self.lastFetched = timestamp
+        lastFetched = timestamp
     }
 
     open func remoteHasChanges(_ info: InfoCollections) -> Bool {

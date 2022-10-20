@@ -1,30 +1,44 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
-import Leanplum
 
 class ETPViewModel {
     //  Internal vars
     var etpCoverSheetmodel: ETPCoverSheetModel?
     var startBrowsing: (() -> Void)?
     var goToSettings: (() -> Void)?
-    
+
     // We only show ETP coversheet for specific app updates and not all. The list below is for the version(s)
     // we would like to show the coversheet for.
     static let etpCoverSheetSupportedAppVersion = ["24.0"]
-    
+
+    static func isCleanInstall(userPrefs: Prefs) -> Bool {
+        if userPrefs.stringForKey(LatestAppVersionProfileKey)?.components(separatedBy: ".").first == nil {
+            return true
+        }
+        return false
+    }
+
     init() {
         setupUpdateModel()
     }
 
     private func setupUpdateModel() {
-        etpCoverSheetmodel = ETPCoverSheetModel(titleImage: #imageLiteral(resourceName: "shield"), titleText: Strings.CoverSheetETPTitle, descriptionText: Strings.CoverSheetETPDescription)
+        etpCoverSheetmodel = ETPCoverSheetModel(
+            titleImage: #imageLiteral(resourceName: "shield"),
+            titleText: .CoverSheetETPTitle,
+            descriptionText: .CoverSheetETPDescription)
     }
-    
-    static func shouldShowETPCoverSheet(userPrefs: Prefs, currentAppVersion: String = VersionSetting.appVersion, isCleanInstall: Bool, supportedAppVersions: [String] = etpCoverSheetSupportedAppVersion) -> Bool {
+
+    static func shouldShowETPCoverSheet(
+        userPrefs: Prefs,
+        currentAppVersion: String = AppInfo.appVersion,
+        isCleanInstall: Bool,
+        supportedAppVersions: [String] = etpCoverSheetSupportedAppVersion
+    ) -> Bool {
         // 0,1,2 so we show on 3rd session as a requirement on Github #6012
         let maxSessionCount = 2
         var shouldShow = false
@@ -65,7 +79,7 @@ class ETPViewModel {
         case .Unknown:
             break
         }
-        
+
         return shouldShow
     }
 }

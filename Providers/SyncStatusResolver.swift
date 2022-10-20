@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Sync
 import Shared
@@ -30,15 +30,15 @@ public enum SyncDisplayState {
     }
 }
 
-public func ==(a: SyncDisplayState, b: SyncDisplayState) -> Bool {
-    switch (a, b) {
+public func == (lhs: SyncDisplayState, rhs: SyncDisplayState) -> Bool {
+    switch (lhs, rhs) {
     case (.inProgress, .inProgress):
         return true
     case (.good, .good):
         return true
-    case (.bad(let a), .bad(let b)) where a == b:
+    case (.bad(let first), .bad(let second)) where first == second:
         return true
-    case (.warning(let a), .warning(let b)) where a == b:
+    case (.warning(let first), .warning(let second)) where first == second:
         return true
     default:
         return false
@@ -68,20 +68,20 @@ public struct SyncStatusResolver {
             case .notStarted(let reason):
                 switch reason {
                 case .offline:
-                    return .bad(message: Strings.FirefoxSyncOfflineTitle)
+                    return .bad(message: .FirefoxSyncOfflineTitle)
                 case .noAccount:
-                    return .warning(message: Strings.FirefoxSyncOfflineTitle)
-                case .backoff(_):
+                    return .warning(message: .FirefoxSyncOfflineTitle)
+                case .backoff:
                     return .good
-                case .engineRemotelyNotEnabled(_):
+                case .engineRemotelyNotEnabled:
                     return .good
-                case .engineFormatOutdated(_):
+                case .engineFormatOutdated:
                     return .good
-                case .engineFormatTooNew(_):
+                case .engineFormatTooNew:
                     return .good
-                case .storageFormatOutdated(_):
+                case .storageFormatOutdated:
                     return .good
-                case .storageFormatTooNew(_):
+                case .storageFormatTooNew:
                     return .good
                 case .stateMachineNotReady:
                     return .good
@@ -102,14 +102,14 @@ public struct SyncStatusResolver {
         let aggregate: SyncDisplayState = displayStates.reduce(.good) { carried, displayState in
             switch displayState {
 
-            case .bad(_):
+            case .bad:
                 return displayState
 
-            case .warning(_):
+            case .warning:
                 // If the state we're carrying is worse than the stale one, keep passing
                 // along the worst one
                 switch carried {
-                case .bad(_):
+                case .bad:
                     return carried
                 default:
                     return displayState

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
 import Sync
@@ -15,12 +15,7 @@ class ExtensionProfile: BrowserProfile {
     }
 }
 
-fileprivate let extensionSafeNames = Set(["clients"])
-
-// Mock class required by `BrowserProfile`
-open class PanelDataObservers {
-    init(profile: Any) {}
-}
+private let extensionSafeNames = Set(["clients"])
 
 // Mock class required by `BrowserProfile`
 open class SearchEngines {

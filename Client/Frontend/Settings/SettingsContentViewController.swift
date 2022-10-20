@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
 import SnapKit
@@ -8,7 +8,6 @@ import UIKit
 import WebKit
 
 let DefaultTimeoutTimeInterval = 10.0 // Seconds.  We'll want some telemetry on load times in the wild.
-private var TODOPageLoadErrorString = NSLocalizedString("Could not load page.", comment: "Error message that is shown in settings when there was a problem loading")
 
 /**
  * A controller that manages a single web view and provides a way for
@@ -23,7 +22,9 @@ class SettingsContentViewController: UIViewController, WKNavigationDelegate {
     var isLoaded: Bool = false {
         didSet {
             if isLoaded {
-                UIView.transition(from: interstitialView, to: settingsWebView,
+                UIView.transition(
+                    from: interstitialView,
+                    to: settingsWebView,
                     duration: 0.5,
                     options: .transitionCrossDissolve,
                     completion: { finished in
@@ -38,7 +39,9 @@ class SettingsContentViewController: UIViewController, WKNavigationDelegate {
         didSet {
             if isError {
                 interstitialErrorView.isHidden = false
-                UIView.transition(from: interstitialSpinnerView, to: interstitialErrorView,
+                UIView.transition(
+                    from: interstitialSpinnerView,
+                    to: interstitialErrorView,
                     duration: 0.5,
                     options: .transitionCrossDissolve,
                     completion: { finished in
@@ -95,9 +98,9 @@ class SettingsContentViewController: UIViewController, WKNavigationDelegate {
 
         // Destructuring let causes problems.
         let ret = makeInterstitialViews()
-        self.interstitialView = ret.0
-        self.interstitialSpinnerView = ret.1
-        self.interstitialErrorView = ret.2
+        self.interstitialView = ret.view
+        self.interstitialSpinnerView = ret.activityView
+        self.interstitialErrorView = ret.label
         view.addSubview(interstitialView)
         self.interstitialView.snp.remakeConstraints { make in
             make.edges.equalTo(self.view)
@@ -123,18 +126,25 @@ class SettingsContentViewController: UIViewController, WKNavigationDelegate {
         return webView
     }
 
-    fileprivate func makeInterstitialViews() -> (UIView, UIActivityIndicatorView, UILabel) {
+    struct InterstitialViews {
+        let view: UIView
+        let activityView: UIActivityIndicatorView
+        let label: UILabel
+    }
+
+    fileprivate func makeInterstitialViews() -> InterstitialViews {
         let view = UIView()
 
         // Keeping the background constant prevents a pop of mismatched color.
         view.backgroundColor = interstitialBackgroundColor
 
-        let spinner = UIActivityIndicatorView(style: .gray)
+        let spinner = UIActivityIndicatorView(style: .medium)
+        spinner.color = .systemGray
         view.addSubview(spinner)
 
         let error = UILabel()
         if let _ = settingsTitle {
-            error.text = TODOPageLoadErrorString
+            error.text = .SettingsContentPageLoadError
             error.textColor = UIColor.theme.tableView.errorText
             error.textAlignment = .center
         }
@@ -154,7 +164,7 @@ class SettingsContentViewController: UIViewController, WKNavigationDelegate {
             return
         }
 
-        return (view, spinner, error)
+        return InterstitialViews(view: view, activityView: spinner, label: error)
     }
 
     @objc func didTimeOut() {

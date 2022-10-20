@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -41,7 +41,7 @@ open class DefaultSuggestedSites {
                 imageUrl: "asset://suggestedsites_facebook",
                 faviconUrl: "asset://defaultFavicon",
                 trackingId: 632,
-                title: NSLocalizedString("Facebook", comment: "Tile title for Facebook")
+                title: .DefaultSuggestedFacebook
             ),
             SuggestedSiteData(
                 url: "https://m.youtube.com/",
@@ -49,7 +49,7 @@ open class DefaultSuggestedSites {
                 imageUrl: "asset://suggestedsites_youtube",
                 faviconUrl: "asset://defaultFavicon",
                 trackingId: 631,
-                title: NSLocalizedString("YouTube", comment: "Tile title for YouTube")
+                title: .DefaultSuggestedYouTube
             ),
             SuggestedSiteData(
                 url: "https://www.amazon.com/",
@@ -57,7 +57,7 @@ open class DefaultSuggestedSites {
                 imageUrl: "asset://suggestedsites_amazon",
                 faviconUrl: "asset://defaultFavicon",
                 trackingId: 630,
-                title: NSLocalizedString("Amazon", comment: "Tile title for Amazon")
+                title: .DefaultSuggestedAmazon
             ),
             SuggestedSiteData(
                 url: "https://www.wikipedia.org/",
@@ -65,7 +65,7 @@ open class DefaultSuggestedSites {
                 imageUrl: "asset://suggestedsites_wikipedia",
                 faviconUrl: "asset://defaultFavicon",
                 trackingId: 629,
-                title: NSLocalizedString("Wikipedia", comment: "Tile title for Wikipedia")
+                title: .DefaultSuggestedWikipedia
             ),
             SuggestedSiteData(
                 url: "https://mobile.twitter.com/",
@@ -73,7 +73,7 @@ open class DefaultSuggestedSites {
                 imageUrl: "asset://suggestedsites_twitter",
                 faviconUrl: "asset://defaultFavicon",
                 trackingId: 628,
-                title: NSLocalizedString("Twitter", comment: "Tile title for Twitter")
+                title: .DefaultSuggestedTwitter
             )
         ],
         "zh_CN": [
@@ -86,7 +86,7 @@ open class DefaultSuggestedSites {
                 title: "火狐社区"
             ),
             SuggestedSiteData(
-                url: "https://m.baidu.com/?from=1000969b",
+                url: "https://m.baidu.com/?from=1000969c",
                 bgColor: "0x00479d",
                 imageUrl: "asset://suggestedsites_baidu",
                 faviconUrl: "asset://baiduLogo",
@@ -118,7 +118,12 @@ open class DefaultSuggestedSites {
                 title: "淘宝"
             ),
             SuggestedSiteData(
-                url: "http://union.click.jd.com/jdc?e=0&p=AyIHVCtaJQMiQwpDBUoyS0IQWlALHE4YDk5ER1xONwdJKVxASgI%2BeDkWfGJ6HEAOUmkbcjUXVyUBEQZRG1IXARQ3VhhaEQETBVweayVkbzcedVolBxIEUBxdFAoQN1UeXRQLGwFXHlsUABs3UisnS0lKWghLWBQCFzdlK2s%3D&t=W1dCFBBFC14NXAAECUte",
+                url: """
+                https://union-click.jd.com/jdc?e=618%7Cpc%7C&p=JF8BAKgJK1olXDYDZBoCUBV\
+                IMzZNXhpXVhgcCEEGXVRFXTMWFQtAM1hXWFttFkhAaihBfRN1XE5ZMipYVQ1uYwxAa1cZb\
+                QIHUV9bCUkQAF8LGFoRXgcAXVttOEsSMyRmGmsXXAcAXFdaAEwVM28PH10TVAMHVVpbDE8\
+                nBG8BKydLFl5fCQ5eCUsSM184GGsSXQ8WUiwcWl8RcV84G1slXTZdEAMAOEkWAmsBK2s
+                """,
                 bgColor: "0xc71622",
                 imageUrl: "asset://suggestedsites_jd",
                 faviconUrl: "asset://jdLogo",

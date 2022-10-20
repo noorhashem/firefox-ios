@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 
@@ -89,7 +89,99 @@ extension URL {
 }
 
 // The list of permanent URI schemes has been taken from http://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml
-private let permanentURISchemes = ["aaa", "aaas", "about", "acap", "acct", "cap", "cid", "coap", "coaps", "crid", "data", "dav", "dict", "dns", "example", "file", "ftp", "geo", "go", "gopher", "h323", "http", "https", "iax", "icap", "im", "imap", "info", "ipp", "ipps", "iris", "iris.beep", "iris.lwz", "iris.xpc", "iris.xpcs", "jabber", "javascript", "ldap", "mailto", "mid", "msrp", "msrps", "mtqp", "mupdate", "news", "nfs", "ni", "nih", "nntp", "opaquelocktoken", "pkcs11", "pop", "pres", "reload", "rtsp", "rtsps", "rtspu", "service", "session", "shttp", "sieve", "sip", "sips", "sms", "snmp", "soap.beep", "soap.beeps", "stun", "stuns", "tag", "tel", "telnet", "tftp", "thismessage", "tip", "tn3270", "turn", "turns", "tv", "urn", "vemmi", "vnc", "ws", "wss", "xcon", "xcon-userid", "xmlrpc.beep", "xmlrpc.beeps", "xmpp", "z39.50r", "z39.50s"]
+private let permanentURISchemes = ["aaa",
+                                   "aaas",
+                                   "about",
+                                   "acap",
+                                   "acct",
+                                   "cap",
+                                   "cid",
+                                   "coap",
+                                   "coaps",
+                                   "crid",
+                                   "data",
+                                   "dav",
+                                   "dict",
+                                   "dns",
+                                   "dtn",
+                                   "example",
+                                   "file",
+                                   "ftp",
+                                   "geo",
+                                   "go",
+                                   "gopher",
+                                   "h323",
+                                   "http",
+                                   "https",
+                                   "iax",
+                                   "icap",
+                                   "im",
+                                   "imap",
+                                   "info",
+                                   "ipn",
+                                   "ipp",
+                                   "ipps",
+                                   "iris",
+                                   "iris.beep",
+                                   "iris.lwz",
+                                   "iris.xpc",
+                                   "iris.xpcs",
+                                   "jabber",
+                                   "ldap",
+                                   "leaptofrogans",
+                                   "mailto",
+                                   "mid",
+                                   "msrp",
+                                   "msrps",
+                                   "mtqp",
+                                   "mupdate",
+                                   "news",
+                                   "nfs",
+                                   "ni",
+                                   "nih",
+                                   "nntp",
+                                   "opaquelocktoken",
+                                   "pkcs11",
+                                   "pop",
+                                   "pres",
+                                   "reload",
+                                   "rtsp",
+                                   "rtsps",
+                                   "rtspu",
+                                   "service",
+                                   "session",
+                                   "shttp",
+                                   "sieve",
+                                   "sip",
+                                   "sips",
+                                   "sms",
+                                   "snmp",
+                                   "soap.beep",
+                                   "soap.beeps",
+                                   "stun",
+                                   "stuns",
+                                   "tag",
+                                   "tel",
+                                   "telnet",
+                                   "tftp",
+                                   "thismessage",
+                                   "tip",
+                                   "tn3270",
+                                   "turn",
+                                   "turns",
+                                   "tv",
+                                   "urn",
+                                   "vemmi",
+                                   "vnc",
+                                   "ws",
+                                   "wss",
+                                   "xcon",
+                                   "xcon-userid",
+                                   "xmlrpc.beep",
+                                   "xmlrpc.beeps",
+                                   "xmpp",
+                                   "z39.50r",
+                                   "z39.50s"]
 
 extension URL {
 
@@ -137,9 +229,11 @@ extension URL {
     }
 
     public var origin: String? {
-        guard isWebPage(includeDataURIs: false), let hostPort = self.hostPort, let scheme = scheme else {
-            return nil
-        }
+        guard isWebPage(includeDataURIs: false),
+              let hostPort = self.hostPort,
+              let scheme = scheme
+        else { return nil }
+
         return "\(scheme)://\(hostPort)"
     }
 
@@ -181,7 +275,7 @@ extension URL {
     }
 
     public var displayURL: URL? {
-        if AppConstants.IsRunningTest, path.contains("test-fixture/") {
+        if AppConstants.isRunningUITests || AppConstants.isRunningPerfTests, path.contains("test-fixture/") {
             return self
         }
 
@@ -250,13 +344,15 @@ extension URL {
     public var normalizedHost: String? {
         // Use components.host instead of self.host since the former correctly preserves
         // brackets for IPv6 hosts, whereas the latter strips them.
-        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false), var host = components.host, host != "" else {
-            return nil
-        }
+        guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              var host = components.host,
+              !host.isEmpty
+        else { return nil }
 
         if let range = host.range(of: "^(www|mobile|m)\\.", options: .regularExpression) {
             host.replaceSubrange(range, with: "")
         }
+        guard host != publicSuffix else { return nil }
 
         return host
     }
@@ -269,6 +365,12 @@ extension URL {
     */
     public var publicSuffix: String? {
         return host.flatMap { publicSuffixFromHost($0, withAdditionalParts: 0) }
+    }
+
+    /// Creates a short domain version of a link's url
+    /// e.g. url: http://www.foosite.com  =>  "foosite"
+    public var shortDomain: String? {
+        return host.flatMap { shortDomain($0, etld: publicSuffix ?? "") }
     }
 
     public func isWebPage(includeDataURIs: Bool = true) -> Bool {
@@ -286,7 +388,7 @@ extension URL {
      */
     public var schemeIsValid: Bool {
         guard let scheme = scheme else { return false }
-        return permanentURISchemes.contains(scheme.lowercased())
+        return permanentURISchemes.contains(scheme.lowercased()) && self.absoluteURL.absoluteString.lowercased() != scheme + ":"
     }
 
     public func havingRemovedAuthorisationComponents() -> URL {
@@ -300,7 +402,7 @@ extension URL {
         }
         return self
     }
-    
+
     public func isEqual(_ url: URL) -> Bool {
         if self == url {
             return true
@@ -315,6 +417,11 @@ extension URL {
         }
         return urls[0] == urls[1]
     }
+
+    public var isFxHomeUrl: Bool {
+        return absoluteString.hasPrefix("internal://local/about/home")
+    }
+
 }
 
 // Extensions to deal with ReaderMode URLs
@@ -348,6 +455,27 @@ extension URL {
         }
         return nil
     }
+}
+
+// MARK: - Exported URL Schemes
+
+extension URL {
+
+    public static var mozPublicScheme: String = {
+        guard let string = Bundle.main.object(forInfoDictionaryKey: "MozPublicURLScheme") as? String, !string.isEmpty else {
+            // Something went wrong/weird, fall back to hard-coded.
+            return "firefox"
+        }
+        return string
+    }()
+
+    public static var mozInternalScheme: String = {
+        guard let string = Bundle.main.object(forInfoDictionaryKey: "MozInternalURLScheme") as? String, !string.isEmpty else {
+            // Something went wrong/weird, fallback to the public one.
+            return Self.mozPublicScheme
+        }
+        return string
+    }()
 }
 
 // Helpers to deal with ErrorPage URLs
@@ -386,9 +514,7 @@ public struct InternalURL {
     }
 
     public init?(_ url: URL) {
-        guard InternalURL.isValid(url: url) else {
-            return nil
-        }
+        guard InternalURL.isValid(url: url) else { return nil }
 
         self.url = url
     }
@@ -400,7 +526,7 @@ public struct InternalURL {
     public var stripAuthorization: String {
         guard var components = URLComponents(string: url.absoluteString), let items = components.queryItems else { return url.absoluteString }
         components.queryItems = items.filter { !Param.uuidkey.matches($0.name) }
-        if let items = components.queryItems, items.count == 0 {
+        if let items = components.queryItems, items.isEmpty {
             components.queryItems = nil // This cleans up the url to not end with a '?'
         }
         return components.url?.absoluteString ?? ""
@@ -461,9 +587,7 @@ public struct InternalURL {
     /// Return the path after "about/" in the URI.
     public var aboutComponent: String? {
         let aboutPath = "/about/"
-        guard let url = URL(string: stripAuthorization) else {
-            return nil
-        }
+        guard let url = URL(string: stripAuthorization) else { return nil }
 
         if url.path.hasPrefix(aboutPath) {
             return String(url.path.dropFirst(aboutPath.count))
@@ -472,9 +596,29 @@ public struct InternalURL {
     }
 }
 
-//MARK: Private Helpers
+// MARK: Private Helpers
 private extension URL {
-    func publicSuffixFromHost( _ host: String, withAdditionalParts additionalPartCount: Int) -> String? {
+
+    /// Creates a short domain version of a link's url
+    /// e.g. url: http://www.foosite.com  =>  "foosite"
+    /// - Parameters:
+    ///   - host: hostname
+    ///   - etld: top level domain to remove from host
+    /// - Returns: The short version of the domain
+    func shortDomain(_ host: String, etld: String) -> String? {
+        // Check edge case where the host is either a single or double '.'.
+        if host.isEmpty || NSString(string: host).lastPathComponent == "." {
+            return ""
+        }
+
+        // Clean up the url by removing www.
+        var hostname = host.replacingOccurrences(of: "www.", with: "")
+        hostname = hostname.replacingOccurrences(of: ".\(etld)", with: "")
+
+        return hostname
+    }
+
+    func publicSuffixFromHost(_ host: String, withAdditionalParts additionalPartCount: Int) -> String? {
         if host.isEmpty {
             return nil
         }
@@ -545,7 +689,7 @@ private extension URL {
                                      .backwards,      // Search from the end.
                                      .anchored]         // Stick to the end.
                 let suffixlessHost = host.replacingOccurrences(of: suffix, with: "", options: literalFromEnd, range: nil)
-                let suffixlessTokens = suffixlessHost.components(separatedBy: ".").filter { $0 != "" }
+                let suffixlessTokens = suffixlessHost.components(separatedBy: ".").filter { !$0.isEmpty }
                 let maxAdditionalCount = max(0, suffixlessTokens.count - additionalPartCount)
                 let additionalParts = suffixlessTokens[maxAdditionalCount..<suffixlessTokens.count]
                 let partsString = additionalParts.joined(separator: ".")

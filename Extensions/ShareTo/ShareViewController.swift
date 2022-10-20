@@ -1,9 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
-import SnapKit
 import Shared
 import Storage
 import Account
@@ -70,17 +69,15 @@ class ShareViewController: UIViewController {
     private var stackView: UIStackView!
     private var actionDoneRow: (row: UIStackView, label: UILabel)!
     private var sendToDevice: SendToDevice?
-    private var pageInfoHeight: Constraint?
-    private var actionRowHeights = [Constraint]()
+    private var pageInfoHeight: NSLayoutConstraint?
+    private var actionRowHeights = [NSLayoutConstraint]()
     private var pageInfoRowTitleLabel: UILabel?
     private var pageInfoRowUrlLabel: UILabel?
 
     weak var delegate: ShareControllerDelegate?
 
     override var extensionContext: NSExtensionContext? {
-        get {
-            return delegate?.getValidExtensionContext()
-        }
+        return delegate?.getValidExtensionContext()
     }
 
     override func viewDidLoad() {
@@ -89,7 +86,7 @@ class ShareViewController: UIViewController {
     }
 
     func setupUI() {
-        view.backgroundColor = Theme.defaultBackground.color
+        view.backgroundColor = ShareTheme.defaultBackground.color
         view.subviews.forEach({ $0.removeFromSuperview() })
 
         setupNavBar()
@@ -112,29 +109,28 @@ class ShareViewController: UIViewController {
 
     private func setupRows() {
         let pageInfoRow = makePageInfoRow(addTo: stackView)
-        pageInfoRowTitleLabel = pageInfoRow.pageTitleLabel
+        pageInfoRowTitleLabel = pageInfoRow.titleLabel
         pageInfoRowUrlLabel = pageInfoRow.urlLabel
         makeSeparator(addTo: stackView)
 
         if shareItem?.isUrlType() ?? true {
-            makeActionRow(addTo: stackView, label: Strings.ShareOpenInFirefox, imageName: "open-in-firefox", action: #selector(actionOpenInFirefoxNow), hasNavigation: false)
-            makeActionRow(addTo: stackView, label: Strings.ShareLoadInBackground, imageName: "menu-Show-Tabs", action: #selector(actionLoadInBackground), hasNavigation: false)
-            makeActionRow(addTo: stackView, label: Strings.ShareBookmarkThisPage, imageName: "AddToBookmarks", action: #selector(actionBookmarkThisPage), hasNavigation: false)
-            makeActionRow(addTo: stackView, label: Strings.ShareAddToReadingList, imageName: "AddToReadingList", action: #selector(actionAddToReadingList), hasNavigation: false)
+            makeActionRow(addTo: stackView, label: .ShareOpenInFirefox, imageName: "open-in-firefox", action: #selector(actionOpenInFirefoxNow), hasNavigation: false)
+            makeActionRow(addTo: stackView, label: .ShareLoadInBackground, imageName: "menu-Show-Tabs", action: #selector(actionLoadInBackground), hasNavigation: false)
+            makeActionRow(addTo: stackView, label: .ShareBookmarkThisPage, imageName: "AddToBookmarks", action: #selector(actionBookmarkThisPage), hasNavigation: false)
+            makeActionRow(addTo: stackView, label: .ShareAddToReadingList, imageName: "AddToReadingList", action: #selector(actionAddToReadingList), hasNavigation: false)
             makeSeparator(addTo: stackView)
-            makeActionRow(addTo: stackView, label: Strings.ShareSendToDevice, imageName: "menu-Send-to-Device", action: #selector(actionSendToDevice), hasNavigation: true)
+            makeActionRow(addTo: stackView, label: .ShareSendToDevice, imageName: "menu-Send-to-Device", action: #selector(actionSendToDevice), hasNavigation: true)
         } else {
             pageInfoRowUrlLabel?.removeFromSuperview()
-            makeActionRow(addTo: stackView, label: Strings.ShareSearchInFirefox, imageName: "quickSearch", action: #selector(actionSearchInFirefox), hasNavigation: false)
+            makeActionRow(addTo: stackView, label: .ShareSearchInFirefox, imageName: "quickSearch", action: #selector(actionSearchInFirefox), hasNavigation: false)
         }
 
         let footerSpaceRow = UIView()
+        footerSpaceRow.translatesAutoresizingMaskIntoConstraints = false
         stackView.addArrangedSubview(footerSpaceRow)
         // Without some growable space at the bottom there are constraint errors because the UIView space doesn't subdivide equally, and none of the rows are growable.
         // Also, during the animation to the done state, without this space, the page info label moves down slightly.
-        footerSpaceRow.snp.makeConstraints { make in
-            make.height.greaterThanOrEqualTo(0)
-        }
+        footerSpaceRow.heightAnchor.constraint(greaterThanOrEqualToConstant: 0).isActive = true
 
         actionDoneRow = makeActionDoneRow(addTo: stackView)
         // Fully constructing and pre-adding as a subview ensures that only the show operation will animate during the UIView.animate(),
@@ -147,12 +143,14 @@ class ShareViewController: UIViewController {
 
     private func makeSeparator(addTo parent: UIStackView) {
         let view = UIView()
-        view.backgroundColor = Theme.separator.color
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.backgroundColor = ShareTheme.separator.color
         parent.addArrangedSubview(view)
-        view.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(1)
-        }
+        NSLayoutConstraint.activate([
+            view.leadingAnchor.constraint(equalTo: parent.leadingAnchor),
+            view.trailingAnchor.constraint(equalTo: parent.trailingAnchor),
+            view.heightAnchor.constraint(equalToConstant: 1)
+        ])
     }
 
     func layout(forTraitCollection traitCollection: UITraitCollection) {
@@ -161,21 +159,27 @@ class ShareViewController: UIViewController {
             return
         }
 
-        pageInfoHeight?.update(offset: isLandscapeSmallScreen(traitCollection) ? UX.pageInfoRowHeight - UX.perRowShrinkageForLandscape : UX.pageInfoRowHeight)
+        pageInfoHeight?.constant = CGFloat(isLandscapeSmallScreen(traitCollection) ? UX.pageInfoRowHeight - UX.perRowShrinkageForLandscape : UX.pageInfoRowHeight)
         actionRowHeights.forEach {
-            $0.update(offset: isLandscapeSmallScreen(traitCollection) ? UX.actionRowHeight - UX.perRowShrinkageForLandscape : UX.actionRowHeight)
+            $0.constant = CGFloat(isLandscapeSmallScreen(traitCollection) ? UX.actionRowHeight - UX.perRowShrinkageForLandscape : UX.actionRowHeight)
         }
     }
 
-    private func makePageInfoRow(addTo parent: UIStackView) -> (row: UIStackView, pageTitleLabel: UILabel, urlLabel: UILabel) {
+    struct PageInfoRow {
+        let row: UIStackView
+        let titleLabel: UILabel
+        let urlLabel: UILabel
+    }
+
+    private func makePageInfoRow(addTo parent: UIStackView) -> PageInfoRow {
         let row = UIStackView()
         row.axis = .horizontal
         row.alignment = .center
+        row.translatesAutoresizingMaskIntoConstraints = false
         row.rightLeftEdges(inset: UX.rowInset)
         parent.addArrangedSubview(row)
-        row.snp.makeConstraints { make in
-            pageInfoHeight = make.height.equalTo(isLandscapeSmallScreen(traitCollection) ? UX.pageInfoRowHeight - UX.perRowShrinkageForLandscape : UX.pageInfoRowHeight).constraint
-        }
+        pageInfoHeight = row.heightAnchor.constraint(equalToConstant: CGFloat(isLandscapeSmallScreen(traitCollection) ? UX.pageInfoRowHeight - UX.perRowShrinkageForLandscape : UX.pageInfoRowHeight))
+        pageInfoHeight?.isActive = true
 
         let verticalStackView = UIStackView()
         verticalStackView.axis = .vertical
@@ -194,43 +198,40 @@ class ShareViewController: UIViewController {
 
         pageTitleLabel.font = UIFont.boldSystemFont(ofSize: UX.baseFont.pointSize)
 
-        return (row, pageTitleLabel, urlLabel)
+        return PageInfoRow(row: row, titleLabel: pageTitleLabel, urlLabel: urlLabel)
     }
 
     private func makeActionRow(addTo parent: UIStackView, label: String, imageName: String, action: Selector, hasNavigation: Bool) {
         let row = UIStackView()
         row.axis = .horizontal
         row.spacing = UX.actionRowSpacingBetweenIconAndTitle
+        row.translatesAutoresizingMaskIntoConstraints = false
         row.rightLeftEdges(inset: UX.rowInset)
         parent.addArrangedSubview(row)
-        row.snp.makeConstraints { make in
-            let c = make.height.equalTo(isLandscapeSmallScreen(traitCollection) ? UX.actionRowHeight - UX.perRowShrinkageForLandscape : UX.actionRowHeight).constraint
-            actionRowHeights.append(c)
-        }
+        let heightConstraint = row.heightAnchor.constraint(equalToConstant: CGFloat(isLandscapeSmallScreen(traitCollection) ? UX.actionRowHeight - UX.perRowShrinkageForLandscape : UX.actionRowHeight))
+        heightConstraint.isActive = true
+        actionRowHeights.append(heightConstraint)
 
         let icon = UIImageView(image: UIImage(named: imageName)?.withRenderingMode(.alwaysTemplate))
         icon.contentMode = .scaleAspectFit
-        icon.tintColor = Theme.actionRowTextAndIcon.color
+        icon.tintColor = ShareTheme.actionRowTextAndIcon.color
+        icon.translatesAutoresizingMaskIntoConstraints = false
 
         let title = UILabel()
         title.font = UX.baseFont
         title.handleLongLabels()
-        title.textColor = Theme.actionRowTextAndIcon.color
+        title.textColor = ShareTheme.actionRowTextAndIcon.color
         title.text = label
         [icon, title].forEach { row.addArrangedSubview($0) }
-
-        icon.snp.makeConstraints { make in
-            make.width.equalTo(UX.actionRowIconSize)
-        }
+        icon.widthAnchor.constraint(equalToConstant: CGFloat(UX.actionRowIconSize)).isActive = true
 
         if hasNavigation {
             let navButton = UIImageView(image: UIImage(named: "menu-Disclosure")?.withRenderingMode(.alwaysTemplate))
             navButton.contentMode = .scaleAspectFit
-            navButton.tintColor = Theme.actionRowTextAndIcon.color
+            navButton.tintColor = ShareTheme.actionRowTextAndIcon.color
+            navButton.translatesAutoresizingMaskIntoConstraints = false
             row.addArrangedSubview(navButton)
-            navButton.snp.makeConstraints { make in
-                make.width.equalTo(14)
-            }
+            navButton.widthAnchor.constraint(equalToConstant: 14).isActive = true
         }
 
         let gesture = UITapGestureRecognizer(target: self, action: action)
@@ -240,9 +241,8 @@ class ShareViewController: UIViewController {
     fileprivate func animateToActionDoneView(withTitle title: String = "") {
         navigationItem.leftBarButtonItem = nil
 
-        navigationController?.view.snp.updateConstraints { make in
-            make.height.equalTo(UX.viewHeightForDoneState)
-        }
+        navigationController?.view.translatesAutoresizingMaskIntoConstraints = false
+        navigationController?.view.heightAnchor.constraint(equalToConstant: CGFloat(UX.viewHeightForDoneState)).isActive = true
 
         actionDoneRow.label.text = title
 
@@ -263,13 +263,11 @@ class ShareViewController: UIViewController {
     private func makeActionDoneRow(addTo parent: UIStackView) -> (row: UIStackView, label: UILabel) {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.addBackground(color: Theme.doneLabelBackground.color)
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.addBackground(color: ShareTheme.doneLabelBackground.color)
         stackView.rightLeftEdges(inset: UX.rowInset)
         parent.addArrangedSubview(stackView)
-
-        stackView.snp.makeConstraints { make in
-            make.height.equalTo(UX.pageInfoRowHeight)
-        }
+        stackView.heightAnchor.constraint(equalToConstant: CGFloat(UX.pageInfoRowHeight)).isActive = true
 
         let label = UILabel()
         label.font = UX.doneLabelFont
@@ -278,36 +276,45 @@ class ShareViewController: UIViewController {
         let checkmark = UILabel()
         checkmark.text = "✓"
         checkmark.font = UIFont.boldSystemFont(ofSize: 22)
+        checkmark.translatesAutoresizingMaskIntoConstraints = false
 
         [label, checkmark].forEach {
             stackView.addArrangedSubview($0)
             $0.textColor = .white
         }
 
-        checkmark.snp.makeConstraints { make in
-            make.width.equalTo(20)
-        }
+        checkmark.widthAnchor.constraint(equalToConstant: 20).isActive = true
 
         return (stackView, label)
     }
 
     private func setupNavBar() {
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithDefaultBackground()
+        appearance.backgroundColor = ShareTheme.defaultBackground.color
+        appearance.shadowColor = .clear
+        appearance.shadowImage = UIImage()
+
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
         navigationController?.navigationBar.isTranslucent = false
-        navigationController?.navigationBar.setValue(true, forKey: "hidesShadow") // hide separator line
         navigationItem.titleView = UIImageView(image: UIImage(named: "Icon-Small"))
         navigationItem.titleView?.contentMode = .scaleAspectFit
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.SendToCancelButton, style: .plain, target: self, action: #selector(finish))
-        navigationController?.navigationBar.barTintColor = Theme.defaultBackground.color
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: .SendToCancelButton, style: .plain, target: self, action: #selector(finish))
     }
 
     private func setupStackView() {
         stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = 4
+        stackView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(stackView)
-        stackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(equalTo: view.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+         ])
     }
 }
 
@@ -315,12 +322,12 @@ extension ShareViewController {
     @objc func actionLoadInBackground(gesture: UIGestureRecognizer) {
         // To avoid re-rentry from double tap, each action function disables the gesture
         gesture.isEnabled = false
-        animateToActionDoneView(withTitle: Strings.ShareLoadInBackgroundDone)
+        animateToActionDoneView(withTitle: .ShareLoadInBackgroundDone)
 
         if let shareItem = shareItem, case .shareItem(let item) = shareItem {
             let profile = BrowserProfile(localName: "profile")
             profile.queue.addToQueue(item).uponQueue(.main) { _ in
-                profile._shutdown()
+                profile.shutdown()
             }
 
             addAppExtensionTelemetryEvent(forMethod: "load-in-background")
@@ -331,13 +338,18 @@ extension ShareViewController {
 
     @objc func actionBookmarkThisPage(gesture: UIGestureRecognizer) {
         gesture.isEnabled = false
-        animateToActionDoneView(withTitle: Strings.ShareBookmarkThisPageDone)
+        animateToActionDoneView(withTitle: .ShareBookmarkThisPageDone)
 
         if let shareItem = shareItem, case .shareItem(let item) = shareItem {
             let profile = BrowserProfile(localName: "profile")
-            profile._reopen()
-            _ = profile.places.createBookmark(parentGUID: BookmarkRoots.MobileFolderGUID, url: item.url, title: item.title).value // Intentionally block thread with database call.
-            profile._shutdown()
+            profile.reopen()
+            // Intentionally block thread with database call.
+            // Add new mobile bookmark at the top of the list
+            _ = profile.places.createBookmark(parentGUID: BookmarkRoots.MobileFolderGUID,
+                                              url: item.url,
+                                              title: item.title,
+                                              position: 0).value
+            profile.shutdown()
 
             addAppExtensionTelemetryEvent(forMethod: "bookmark-this-page")
         }
@@ -347,13 +359,13 @@ extension ShareViewController {
 
     @objc func actionAddToReadingList(gesture: UIGestureRecognizer) {
         gesture.isEnabled = false
-        animateToActionDoneView(withTitle: Strings.ShareAddToReadingListDone)
+        animateToActionDoneView(withTitle: .ShareAddToReadingListDone)
 
         if let shareItem = shareItem, case .shareItem(let item) = shareItem {
             let profile = BrowserProfile(localName: "profile")
-            profile._reopen()
+            profile.reopen()
             profile.readingList.createRecordWithURL(item.url, title: item.title ?? "", addedBy: UIDevice.current.name)
-            profile._shutdown()
+            profile.shutdown()
 
             addAppExtensionTelemetryEvent(forMethod: "add-to-reading-list")
         }
@@ -362,9 +374,7 @@ extension ShareViewController {
     }
 
     @objc func actionSendToDevice(gesture: UIGestureRecognizer) {
-        guard let shareItem = shareItem, case .shareItem(let item) = shareItem else {
-            return
-        }
+        guard let shareItem = shareItem, case .shareItem(let item) = shareItem else { return }
 
         gesture.isEnabled = false
         view.isUserInteractionEnabled = false
@@ -425,4 +435,3 @@ extension ShareViewController {
         finish(afterDelay: 0)
     }
 }
-

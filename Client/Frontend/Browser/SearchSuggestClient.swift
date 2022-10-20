@@ -1,10 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
-import SwiftyJSON
 
 let SearchSuggestClientErrorDomain = "org.mozilla.firefox.SearchSuggestClient"
 let SearchSuggestClientErrorInvalidEngine = 0
@@ -42,14 +41,16 @@ class SearchSuggestClient {
                 return
             }
 
-            guard let data = data, let _ = validatedHTTPResponse(response, statusCode: 200..<300) else {
+            guard let data = data,
+                  let _ = validatedHTTPResponse(response, statusCode: 200..<300)
+            else {
                 let error = NSError(domain: SearchSuggestClientErrorDomain, code: SearchSuggestClientErrorInvalidResponse, userInfo: nil)
                 callback(nil, error as NSError?)
                 return
             }
 
-            let json = JSON(data)
-            let array = json.arrayObject
+            let json = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed)
+            let array = json as? [Any]
 
             // The response will be of the following format:
             //    ["foobar",["foobar","foobar2000 mac","foobar skins",...]]

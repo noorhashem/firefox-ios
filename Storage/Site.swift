@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -9,7 +9,7 @@ public protocol Identifiable: Equatable {
     var id: Int? { get set }
 }
 
-public func ==<T>(lhs: T, rhs: T) -> Bool where T: Identifiable {
+public func ==<T> (lhs: T, rhs: T) -> Bool where T: Identifiable {
     return lhs.id == rhs.id
 }
 
@@ -31,10 +31,15 @@ open class Favicon: Identifiable {
 // cursor results, perhaps as a tuple.
 open class Site: Identifiable {
     open var id: Int?
-    var guid: String?
+    open var guid: String?
 
     open var tileURL: URL {
         return URL(string: url)?.domainURL ?? URL(string: "about:blank")!
+    }
+
+    // i.e. `http://www.example.com/` --> `example`
+    open var secondLevelDomain: String? {
+        return URL(string: url)?.host?.components(separatedBy: ".").suffix(2).first
     }
 
     public let url: String
@@ -61,3 +66,15 @@ open class Site: Identifiable {
     }
 
 }
+
+// MARK: - Hashable
+extension Site: Hashable {
+     public func hash(into hasher: inout Hasher) {
+         hasher.combine(id)
+     }
+
+     public static func == (lhs: Site, rhs: Site) -> Bool {
+         lhs.url == rhs.url
+     }
+
+ }

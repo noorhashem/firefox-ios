@@ -1,16 +1,13 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
+import UIKit
 import Fuzi
-import SDWebImage
 import SwiftyJSON
 import Shared
 import XCGLogger
-
-// Used as backgrounds for favicons
-public let DefaultFaviconBackgroundColors = ["2e761a", "399320", "40a624", "57bd35", "70cf5b", "90e07f", "b1eea5", "881606", "aa1b08", "c21f09", "d92215", "ee4b36", "f67964", "ffa792", "025295", "0568ba", "0675d3", "0996f8", "2ea3ff", "61b4ff", "95cdff", "00736f", "01908b", "01a39d", "01bdad", "27d9d2", "58e7e6", "89f4f5", "c84510", "e35b0f", "f77100", "ff9216", "ffad2e", "ffc446", "ffdf81", "911a2e", "b7223b", "cf2743", "ea385e", "fa526e", "ff7a8d", "ffa7b3" ]
 
 private let log = Logger.syncLogger
 
@@ -20,7 +17,7 @@ private var urlSession: URLSession = makeURLSession(userAgent: UserAgent.desktop
 
 // If all else fails, this is the default "default" icon.
 private var defaultFavicon: UIImage = {
-    return UIImage(named: "defaultFavicon")!
+    return UIImage(named: ImageIdentifiers.defaultFavicon)!
 }()
 
 // An in-memory cache of "default" favicons keyed by the
@@ -31,8 +28,8 @@ private var defaultFaviconImageCache = [String: UIImage]()
 // region-specific TLDs. This helps us resolve them.
 private let multiRegionTopSitesDomains = ["craigslist", "google", "amazon"]
 
-private let topSitesIcons: [String : (color: UIColor, fileURL: URL)] = {
-    var icons: [String : (color: UIColor, fileURL: URL)] = [:]
+private let topSitesIcons: [String: (color: UIColor, fileURL: URL)] = {
+    var icons: [String: (color: UIColor, fileURL: URL)] = [:]
 
     let filePath = Bundle.main.path(forResource: "top_sites", ofType: "json")
     let file = try! Data(contentsOf: URL(fileURLWithPath: filePath!))
@@ -91,7 +88,7 @@ extension SQLiteHistory: Favicons {
             """
 
         let args: Args = [url, url]
-        return db.runQueryConcurrently(sql, args: args, factory: SQLiteHistory.iconColumnFactory)
+        return database.runQueryConcurrently(sql, args: args, factory: SQLiteHistory.iconColumnFactory)
     }
 
     public func addFavicon(_ icon: Favicon) -> Deferred<Maybe<Int>> {
@@ -104,7 +101,7 @@ extension SQLiteHistory: Favicons {
      */
     public func addFavicon(_ icon: Favicon, forSite site: Site) -> Deferred<Maybe<Int>> {
         func doChange(_ query: String, args: Args?) -> Deferred<Maybe<Int>> {
-            return db.withConnection { conn -> Int in
+            return database.withConnection { conn -> Int in
                 // Blind! We don't see failure here.
                 let id = self.favicons.insertOrUpdateFaviconInTransaction(icon, conn: conn)
 
@@ -163,7 +160,7 @@ extension SQLiteHistory: Favicons {
                                 return self.generateDefaultFaviconImage(forSite: site)
                             }
                             // Try to get the favicon from the URL scraped from the web page.
-                            return self.downloadFaviconImage(faviconURL: faviconURL).bind { result in
+                            return self.retrieveTopSiteSQLiteHistoryFaviconImage(faviconURL: faviconURL).bind { result in
                                 // If the favicon could not be downloaded, use the generated "default" favicon.
                                 guard let image = result.successValue else {
                                     return self.generateDefaultFaviconImage(forSite: site)
@@ -175,7 +172,7 @@ extension SQLiteHistory: Favicons {
                     }
 
                     // Attempt to download the favicon from the URL found in the database.
-                    return self.downloadFaviconImage(faviconURL: faviconURL).bind { result in
+                    return self.retrieveTopSiteSQLiteHistoryFaviconImage(faviconURL: faviconURL).bind { result in
                         // If the favicon could not be downloaded, use the generated "default" favicon.
                         guard let image = result.successValue else {
                             return self.generateDefaultFaviconImage(forSite: site)
@@ -191,15 +188,17 @@ extension SQLiteHistory: Favicons {
     }
 
     // Downloads a favicon image from the web or retrieves it from the cache.
-    fileprivate func downloadFaviconImage(faviconURL: URL) -> Deferred<Maybe<UIImage>> {
+    fileprivate func retrieveTopSiteSQLiteHistoryFaviconImage(faviconURL: URL) -> Deferred<Maybe<UIImage>> {
         let deferred = CancellableDeferred<Maybe<UIImage>>()
 
-        SDWebImageManager.shared.loadImage(with: faviconURL, options: .continueInBackground, progress: nil) { (image, _, _, _, _, _) in
-            if let image = image {
-                deferred.fill(Maybe(success: image))
-            } else {
+        ImageLoadingHandler.shared.getImageFromCacheOrDownload(with: faviconURL,
+                                                               limit: ImageLoadingConstants.MaximumFaviconSize) { image, error in
+            guard error == nil, let image = image else {
                 deferred.fill(Maybe(failure: FaviconDownloadError(faviconURL: faviconURL.absoluteString)))
+                return
             }
+
+            deferred.fill(Maybe(success: image))
         }
 
         return deferred
@@ -292,7 +291,7 @@ extension SQLiteHistory: Favicons {
                     // Also, insert a row in `favicon_site_urls` so we can
                     // look up this favicon later without requiring history.
                     // This is primarily needed for bookmarks.
-                    _ = self.db.run("INSERT OR IGNORE INTO favicon_site_urls(site_url, faviconID) VALUES (?, ?)", withArgs: [site.url, faviconID])
+                    _ = self.database.run("INSERT OR IGNORE INTO favicon_site_urls(site_url, faviconID) VALUES (?, ?)", withArgs: [site.url, faviconID])
                 }
             }
 

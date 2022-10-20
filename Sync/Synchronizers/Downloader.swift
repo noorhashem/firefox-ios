@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -28,9 +28,7 @@ class BatchingDownloader<T: CleartextPayloadJSON> {
 
     var _advance: (() -> Void)?
     func advance() {
-        guard let f = self._advance else {
-            return
-        }
+        guard let f = self._advance else { return }
         self._advance = nil
         f()
     }
@@ -69,9 +67,7 @@ class BatchingDownloader<T: CleartextPayloadJSON> {
         get {
             let o = self.prefs.stringForKey("nextOffset")
             let n = self.prefs.timestampForKey("offsetNewer")
-            guard let offset = o, let newer = n else {
-                return nil
-            }
+            guard let offset = o, let newer = n else { return nil }
             return (offset, newer)
         }
         set (value) {

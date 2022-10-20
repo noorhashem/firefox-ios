@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Storage
 import Shared
@@ -54,7 +54,7 @@ class LoginListDataSourceHelper {
     }
 
     func computeSectionsFromLogins(_ logins: [LoginRecord]) -> Deferred<Maybe<([Character], [Character: [LoginRecord]])>> {
-        guard logins.count > 0 else {
+        guard !logins.isEmpty else {
             return deferMaybe( ([Character](), [Character: [LoginRecord]]()) )
         }
 

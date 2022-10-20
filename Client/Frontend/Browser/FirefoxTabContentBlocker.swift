@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import WebKit
 import Shared
@@ -70,7 +70,7 @@ class FirefoxTabContentBlocker: TabContentBlocker, TabContentScript {
         ContentBlocker.shared.setupTrackingProtection(forTab: tab, isEnabled: isEnabled, rules: rules)
     }
 
-    @objc override func notifiedTabSetupRequired() {
+    override func notifiedTabSetupRequired() {
         setupForTab()
         if let tab = tab as? Tab {
             TabEvent.post(.didChangeContentBlocking, for: tab)

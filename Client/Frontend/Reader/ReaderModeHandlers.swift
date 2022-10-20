@@ -1,14 +1,24 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import GCDWebServers
 
-struct ReaderModeHandlers {
+protocol ReaderModeHandlersProtocol {
+    func register(_ webServer: WebServerProtocol, profile: Profile)
+}
+
+struct ReaderModeHandlers: ReaderModeHandlersProtocol {
     static let ReaderModeStyleHash = "sha256-L2W8+0446ay9/L1oMrgucknQXag570zwgQrHwE68qbQ="
 
     static var readerModeCache: ReaderModeCache = DiskReaderModeCache.sharedInstance
+
+    func register(_ webServer: WebServerProtocol, profile: Profile) {
+        // Temporary hacky casting to allow for gradual movement to protocol oriented programming
+        guard let webServer = webServer as? WebServer else { return }
+        ReaderModeHandlers.register(webServer, profile: profile)
+    }
 
     static func register(_ webServer: WebServer, profile: Profile) {
         // Register our fonts and css, which we want to expose to web content that we present in the WebView
@@ -47,7 +57,9 @@ struct ReaderModeHandlers {
                         if let html = ReaderModeUtils.generateReaderContent(readabilityResult, initialStyle: readerModeStyle),
                             let response = GCDWebServerDataResponse(html: html) {
                             // Apply a Content Security Policy that disallows everything except images from anywhere and fonts and css from our internal server
-                            response.setValue("default-src 'none'; img-src *; style-src http://localhost:* '\(ReaderModeStyleHash)'; font-src http://localhost:*", forAdditionalHeader: "Content-Security-Policy")
+                            response.setValue(
+                                "default-src 'none'; img-src *; style-src http://localhost:* '\(ReaderModeStyleHash)'; font-src http://localhost:*",
+                                forAdditionalHeader: "Content-Security-Policy")
                             return response
                         }
                     } catch _ {
@@ -62,14 +74,26 @@ struct ReaderModeHandlers {
                         if let readerViewLoadingPath = Bundle.main.path(forResource: "ReaderViewLoading", ofType: "html") {
                             do {
                                 let readerViewLoading = try NSMutableString(contentsOfFile: readerViewLoadingPath, encoding: String.Encoding.utf8.rawValue)
-                                readerViewLoading.replaceOccurrences(of: "%ORIGINAL-URL%", with: url.absoluteString,
-                                    options: .literal, range: NSRange(location: 0, length: readerViewLoading.length))
-                                readerViewLoading.replaceOccurrences(of: "%LOADING-TEXT%", with: NSLocalizedString("Loading content…", comment: "Message displayed when the reader mode page is loading. This message will appear only when sharing to Firefox reader mode from another app."),
-                                    options: .literal, range: NSRange(location: 0, length: readerViewLoading.length))
-                                readerViewLoading.replaceOccurrences(of: "%LOADING-FAILED-TEXT%", with: NSLocalizedString("The page could not be displayed in Reader View.", comment: "Message displayed when the reader mode page could not be loaded. This message will appear only when sharing to Firefox reader mode from another app."),
-                                    options: .literal, range: NSRange(location: 0, length: readerViewLoading.length))
-                                readerViewLoading.replaceOccurrences(of: "%LOAD-ORIGINAL-TEXT%", with: NSLocalizedString("Load original page", comment: "Link for going to the non-reader page when the reader view could not be loaded. This message will appear only when sharing to Firefox reader mode from another app."),
-                                    options: .literal, range: NSRange(location: 0, length: readerViewLoading.length))
+                                readerViewLoading.replaceOccurrences(
+                                    of: "%ORIGINAL-URL%",
+                                    with: url.absoluteString,
+                                    options: .literal,
+                                    range: NSRange(location: 0, length: readerViewLoading.length))
+                                readerViewLoading.replaceOccurrences(
+                                    of: "%LOADING-TEXT%",
+                                    with: .ReaderModeHandlerLoadingContent,
+                                    options: .literal,
+                                    range: NSRange(location: 0, length: readerViewLoading.length))
+                                readerViewLoading.replaceOccurrences(
+                                    of: "%LOADING-FAILED-TEXT%",
+                                    with: .ReaderModeHandlerPageCantDisplay,
+                                    options: .literal,
+                                    range: NSRange(location: 0, length: readerViewLoading.length))
+                                readerViewLoading.replaceOccurrences(
+                                    of: "%LOAD-ORIGINAL-TEXT%",
+                                    with: .ReaderModeHandlerLoadOriginalPage,
+                                    options: .literal,
+                                    range: NSRange(location: 0, length: readerViewLoading.length))
                                 return GCDWebServerDataResponse(html: readerViewLoading as String)
                             } catch _ {
                             }
@@ -78,7 +102,7 @@ struct ReaderModeHandlers {
                 }
             }
 
-            let errorString = NSLocalizedString("There was an error converting the page", comment: "Error displayed when reader mode cannot be enabled")
+            let errorString: String = .ReaderModeHandlerError
             return GCDWebServerDataResponse(html: errorString) // TODO Needs a proper error page
         }
     }

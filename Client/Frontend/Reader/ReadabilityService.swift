@@ -1,10 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
+import Shared
 import WebKit
 
+private let log = Logger.browserLogger
 private let ReadabilityServiceSharedInstance = ReadabilityService()
 
 private let ReadabilityTaskDefaultTimeout = 15
@@ -39,7 +41,8 @@ class ReadabilityOperation: Operation {
 
         DispatchQueue.main.async(execute: { () -> Void in
             let configuration = WKWebViewConfiguration()
-            self.tab = Tab(bvc: BrowserViewController.foregroundBVC(), configuration: configuration)
+            // TODO: To resolve profile from DI container
+            self.tab = Tab(profile: BrowserViewController.foregroundBVC().profile, configuration: configuration)
             self.tab.createWebview()
             self.tab.navigationDelegate = self
 
@@ -66,13 +69,14 @@ class ReadabilityOperation: Operation {
                 break
             case .success(let readabilityResult):
                 do {
+                    log.info("ReadabilityService: Readability result available!")
                     try readerModeCache.put(url, readabilityResult)
                 } catch let error as NSError {
                     print("Failed to store readability results in the cache: \(error.localizedDescription)")
                     // TODO Fail
                 }
-            case .error(_):
-                // TODO Not entitely sure what to do on error. Needs UX discussion and followup bug.
+            case .error:
+                // TODO Not entirely sure what to do on error. Needs UX discussion and followup bug.
                 break
             }
         }
@@ -91,7 +95,7 @@ extension ReadabilityOperation: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        webView.evaluateJavaScript("\(ReaderModeNamespace).checkReadability()")
+        webView.evaluateJavascriptInDefaultContentWorld("\(ReaderModeNamespace).checkReadability()")
     }
 }
 
@@ -103,9 +107,8 @@ extension ReadabilityOperation: ReaderModeDelegate {
     }
 
     func readerMode(_ readerMode: ReaderMode, didParseReadabilityResult readabilityResult: ReadabilityResult, forTab tab: Tab) {
-        guard tab == self.tab else {
-            return
-        }
+        log.info("ReadbilityService: Readability result available!")
+        guard tab == self.tab else { return }
 
         result = ReadabilityOperationResult.success(readabilityResult)
         semaphore.signal()

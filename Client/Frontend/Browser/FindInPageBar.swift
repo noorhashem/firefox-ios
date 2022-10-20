@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -27,6 +27,8 @@ class FindInPageBar: UIView {
     fileprivate let matchCountView = UILabel()
     fileprivate let previousButton = UIButton()
     fileprivate let nextButton = UIButton()
+
+    private static let savedTextKey = "findInPageSavedTextKey"
 
     var currentResult = 0 {
         didSet {
@@ -87,14 +89,14 @@ class FindInPageBar: UIView {
 
         previousButton.setImage(UIImage(named: "find_previous"), for: [])
         previousButton.setTitleColor(FindInPageUX.ButtonColor, for: [])
-        previousButton.accessibilityLabel = NSLocalizedString("Previous in-page result", tableName: "FindInPage", comment: "Accessibility label for previous result button in Find in Page Toolbar.")
+        previousButton.accessibilityLabel = .FindInPagePreviousAccessibilityLabel
         previousButton.addTarget(self, action: #selector(didFindPrevious), for: .touchUpInside)
         previousButton.accessibilityIdentifier = "FindInPage.find_previous"
         addSubview(previousButton)
 
         nextButton.setImage(UIImage(named: "find_next"), for: [])
         nextButton.setTitleColor(FindInPageUX.ButtonColor, for: [])
-        nextButton.accessibilityLabel = NSLocalizedString("Next in-page result", tableName: "FindInPage", comment: "Accessibility label for next result button in Find in Page Toolbar.")
+        nextButton.accessibilityLabel = .FindInPageNextAccessibilityLabel
         nextButton.addTarget(self, action: #selector(didFindNext), for: .touchUpInside)
         nextButton.accessibilityIdentifier = "FindInPage.find_next"
         addSubview(nextButton)
@@ -102,7 +104,7 @@ class FindInPageBar: UIView {
         let closeButton = UIButton()
         closeButton.setImage(UIImage(named: "find_close"), for: [])
         closeButton.setTitleColor(FindInPageUX.ButtonColor, for: [])
-        closeButton.accessibilityLabel = NSLocalizedString("Done", tableName: "FindInPage", comment: "Done button in Find in Page Toolbar.")
+        closeButton.accessibilityLabel = .FindInPageDoneAccessibilityLabel
         closeButton.addTarget(self, action: #selector(didPressClose), for: .touchUpInside)
         closeButton.accessibilityIdentifier = "FindInPage.close"
         addSubview(closeButton)
@@ -167,11 +169,21 @@ class FindInPageBar: UIView {
 
     @objc fileprivate func didTextChange(_ sender: UITextField) {
         matchCountView.isHidden = searchText.text?.trimmingCharacters(in: .whitespaces).isEmpty ?? true
+        saveSearchText(searchText.text)
         delegate?.findInPage(self, didTextChange: searchText.text ?? "")
     }
 
     @objc fileprivate func didPressClose(_ sender: UIButton) {
         delegate?.findInPageDidPressClose(self)
+    }
+
+    private func saveSearchText(_ searchText: String?) {
+        guard let text = searchText, !text.isEmpty else { return }
+        UserDefaults.standard.set(text, forKey: FindInPageBar.savedTextKey)
+    }
+
+    static var retrieveSavedText: String? {
+        return UserDefaults.standard.object(forKey: FindInPageBar.savedTextKey) as? String
     }
 }
 

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -98,7 +98,13 @@ extension TimestampedSingleCollectionSynchronizer {
      * In order to implement the latter, we'd need to chain the date from getSince in place of the
      * 0 in the call to uploadOutgoingFromStorage in each synchronizer.
      */
-    func uploadRecords<T>(_ records: [Record<T>], lastTimestamp: Timestamp, storageClient: Sync15CollectionClient<T>, onUpload: @escaping (POSTResult, Timestamp?) -> DeferredTimestamp) -> DeferredTimestamp {
+    func uploadRecords<T>(
+        _ records: [Record<T>],
+        lastTimestamp: Timestamp,
+        storageClient: Sync15CollectionClient<T>,
+        onUpload: @escaping (POSTResult, Timestamp?) -> DeferredTimestamp
+    ) -> DeferredTimestamp {
+
         if records.isEmpty {
             log.debug("No modified records to upload.")
             return deferMaybe(lastTimestamp)

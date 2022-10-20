@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import XCGLogger
@@ -30,9 +30,12 @@ open class BrowserDB {
     // Returns the SQLite version for debug purposes.
     public func sqliteVersion() -> Deferred<Maybe<String>> {
         return withConnection { connection -> String in
-            let result = connection.executeQueryUnsafe("SELECT sqlite_version()", factory: { row -> String in
-                return row[0] as? String ?? ""
-            }, withArgs: nil)
+            let result = connection.executeQueryUnsafe(
+                "SELECT sqlite_version()",
+                factory: { row -> String in
+                    return row[0] as? String ?? ""
+                },
+                withArgs: nil)
             return result.asArray().first ?? ""
         }
     }
@@ -40,9 +43,12 @@ open class BrowserDB {
     // Returns the SQLite compile_options for debug purposes.
     public func sqliteCompileOptions() -> Deferred<Maybe<[String]>> {
         return withConnection { connection -> [String] in
-            let result = connection.executeQueryUnsafe("PRAGMA compile_options", factory: { row -> String in
-                return row[0] as? String ?? ""
-            }, withArgs: nil)
+            let result = connection.executeQueryUnsafe(
+                "PRAGMA compile_options",
+                factory: { row -> String in
+                    return row[0] as? String ?? ""
+                },
+                withArgs: nil)
             return result.asArray().filter({ !$0.isEmpty })
         }
     }
@@ -50,9 +56,12 @@ open class BrowserDB {
     // Returns the SQLite secure_delete setting for debug purposes.
     public func sqliteSecureDelete() -> Deferred<Maybe<Int>> {
         return withConnection { connection -> Int in
-            let result = connection.executeQueryUnsafe("PRAGMA secure_delete", factory: { row -> Int in
-                return row[0] as? Int ?? 0
-            }, withArgs: nil)
+            let result = connection.executeQueryUnsafe(
+                "PRAGMA secure_delete",
+                factory: { row -> Int in
+                    return row[0] as? Int ?? 0
+                },
+                withArgs: nil)
             return result.asArray().first ?? 0
         }
     }

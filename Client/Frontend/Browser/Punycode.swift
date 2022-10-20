@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -48,7 +48,7 @@ extension String {
                 extendedChars.append(Int(c.value))
             }
         }
-        if extendedChars.count == 0 {
+        if extendedChars.isEmpty {
             return output
         }
         if d > 0 {
@@ -123,7 +123,7 @@ extension String {
         var n = initialN
         var bias = initialBias
         var pos = 0
-        if let ipos = input.firstIndex(of: delimiter) {
+        if let ipos = input.lastIndex(of: delimiter) {
             pos = ipos
             output.append(contentsOf: input[0 ..< pos])
             pos += 1
@@ -155,18 +155,18 @@ extension String {
         return String(output)
     }
 
-    fileprivate func isValidUnicodeScala(_ s: String) -> Bool {
-        for c in s.unicodeScalars {
-            let ci = Int(c.value)
-            if ci >= initialN {
+    fileprivate func isValidUnicodeScala(_ string: String) -> Bool {
+        for scalar in string.unicodeScalars {
+            let intScalar = Int(scalar.value)
+            if intScalar >= initialN {
                 return false
             }
         }
         return true
     }
 
-    fileprivate func isValidPunycodeScala(_ s: String) -> Bool {
-        return s.hasPrefix(prefixPunycode)
+    fileprivate func isValidPunycodeScala(_ string: String) -> Bool {
+        return string.hasPrefix(prefixPunycode)
     }
 
     public func utf8HostToAscii() -> String {

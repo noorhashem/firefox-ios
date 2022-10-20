@@ -1,11 +1,10 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Storage
 import Shared
-import SwiftKeychainWrapper
 
 enum InfoItem: Int {
     case breachItem = 0
@@ -20,40 +19,53 @@ enum InfoItem: Int {
     }
 }
 
-private struct LoginDetailUX {
+struct LoginDetailUX {
     static let InfoRowHeight: CGFloat = 58
     static let DeleteRowHeight: CGFloat = 44
     static let SeparatorHeight: CGFloat = 84
 }
 
-fileprivate class CenteredDetailCell: ThemedTableViewCell {
+private class CenteredDetailCell: ThemedTableViewCell {
     override func layoutSubviews() {
         super.layoutSubviews()
         var f = detailTextLabel?.frame ?? CGRect()
-        f.center = frame.center
+        f.center = CGPoint(x: frame.center.x - safeAreaInsets.right, y: frame.center.y)
         detailTextLabel?.frame = f
     }
 }
 
 class LoginDetailViewController: SensitiveViewController {
-    fileprivate let profile: Profile
-    fileprivate let tableView = UITableView()
-    fileprivate weak var websiteField: UITextField?
-    fileprivate weak var usernameField: UITextField?
-    fileprivate weak var passwordField: UITextField?
+    private let profile: Profile
+
+    private lazy var tableView: UITableView = .build { [weak self] tableView in
+        guard let self = self else { return }
+
+        tableView.separatorColor = UIColor.theme.tableView.separator
+        tableView.backgroundColor = UIColor.theme.tableView.headerBackground
+        tableView.accessibilityIdentifier = "Login Detail List"
+        tableView.delegate = self
+        tableView.dataSource = self
+
+        // Add empty footer view to prevent separators from being drawn past the last item.
+        tableView.tableFooterView = UIView()
+    }
+
+    private weak var websiteField: UITextField?
+    private weak var usernameField: UITextField?
+    private weak var passwordField: UITextField?
     // Used to temporarily store a reference to the cell the user is showing the menu controller for
-    fileprivate var menuControllerCell: LoginDetailTableViewCell?
-    fileprivate var deleteAlert: UIAlertController?
+    private var menuControllerCell: LoginDetailTableViewCell?
+    private var deleteAlert: UIAlertController?
     weak var settingsDelegate: SettingsDelegate?
-    fileprivate var breach: BreachRecord?
-    fileprivate var login: LoginRecord {
+    private var breach: BreachRecord?
+    private var login: LoginRecord {
         didSet {
             tableView.reloadData()
         }
     }
     var webpageNavigationHandler: ((_ url: URL?) -> Void)?
 
-    fileprivate var isEditingFieldData: Bool = false {
+    private var isEditingFieldData: Bool = false {
         didSet {
             if isEditingFieldData != oldValue {
                 tableView.reloadData()
@@ -85,51 +97,21 @@ class LoginDetailViewController: SensitiveViewController {
 
         view.addSubview(tableView)
 
-        tableView.snp.makeConstraints { make in
-            make.edges.equalTo(self.view)
-        }
+        NSLayoutConstraint.activate([
+            tableView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tableView.topAnchor.constraint(equalTo: view.topAnchor),
+            tableView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            tableView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
         tableView.estimatedRowHeight = 44.0
     }
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
 
-        tableView.separatorColor = UIColor.theme.tableView.separator
-        tableView.backgroundColor = UIColor.theme.tableView.headerBackground
-        tableView.accessibilityIdentifier = "Login Detail List"
-        tableView.delegate = self
-        tableView.dataSource = self
-
-        // Add empty footer view to prevent seperators from being drawn past the last item.
-        tableView.tableFooterView = UIView()
-
         // Normally UITableViewControllers handle responding to content inset changes from keyboard events when editing
         // but since we don't use the tableView's editing flag for editing we handle this ourselves.
         KeyboardHelper.defaultHelper.addDelegate(self)
-    }
-
-    override func viewDidLayoutSubviews() {
-        super.viewDidLayoutSubviews()
-
-        // The following hacks are to prevent the default cell seperators from displaying. We want to
-        // hide the default seperator for the website/last modified cells since the last modified cell
-        // draws its own separators. The last item in the list draws its seperator full width.
-
-        // Prevent seperators from showing by pushing them off screen by the width of the cell
-        let itemsToHideSeperators: [InfoItem] = [.passwordItem, .lastModifiedSeparator]
-        itemsToHideSeperators.forEach { item in
-            let cell = tableView.cellForRow(at: IndexPath(row: item.rawValue, section: 0))
-            cell?.separatorInset = UIEdgeInsets(top: 0, left: cell?.bounds.width ?? 0, bottom: 0, right: 0)
-        }
-
-        // Rows to display full width seperator
-        let itemsToShowFullWidthSeperator: [InfoItem] = [.deleteItem]
-        itemsToShowFullWidthSeperator.forEach { item in
-            let cell = tableView.cellForRow(at: IndexPath(row: item.rawValue, section: 0))
-            cell?.separatorInset = .zero
-            cell?.layoutMargins = .zero
-            cell?.preservesSuperviewLayoutMargins = false
-        }
     }
 }
 
@@ -140,13 +122,17 @@ extension LoginDetailViewController: UITableViewDataSource {
         switch InfoItem(rawValue: indexPath.row)! {
         case .breachItem:
             let breachCell = cell(forIndexPath: indexPath)
-            guard let breach = self.breach else { return breachCell }
+            guard let breach = breach else { return breachCell }
             breachCell.isHidden = false
             let breachDetailView = BreachAlertsDetailView()
             breachCell.contentView.addSubview(breachDetailView)
-            breachDetailView.snp.makeConstraints { make in
-                make.edges.equalTo(breachCell.contentView).inset(LoginTableViewCellUX.HorizontalMargin)
-            }
+
+            NSLayoutConstraint.activate([
+                breachDetailView.leadingAnchor.constraint(equalTo: breachCell.contentView.leadingAnchor, constant: LoginTableViewCellUX.HorizontalMargin),
+                breachDetailView.topAnchor.constraint(equalTo: breachCell.contentView.topAnchor, constant: LoginTableViewCellUX.HorizontalMargin),
+                breachDetailView.trailingAnchor.constraint(equalTo: breachCell.contentView.trailingAnchor, constant: LoginTableViewCellUX.HorizontalMargin),
+                breachDetailView.bottomAnchor.constraint(equalTo: breachCell.contentView.bottomAnchor, constant: LoginTableViewCellUX.HorizontalMargin)
+            ])
             breachDetailView.setup(breach)
 
             breachDetailView.learnMoreButton.addTarget(self, action: #selector(LoginDetailViewController.didTapBreachLearnMore), for: .touchUpInside)
@@ -161,8 +147,8 @@ extension LoginDetailViewController: UITableViewDataSource {
 
         case .usernameItem:
             let loginCell = cell(forIndexPath: indexPath)
-            loginCell.highlightedLabelTitle = NSLocalizedString("Username", tableName: "LoginManager", comment: "Label displayed above the username row in Login Detail View.")
-            loginCell.descriptionLabel.text = login.username
+            loginCell.highlightedLabelTitle = .LoginDetailUsername
+            loginCell.descriptionLabel.text = login.decryptedUsername
             loginCell.descriptionLabel.keyboardType = .emailAddress
             loginCell.descriptionLabel.returnKeyType = .next
             loginCell.isEditingFieldData = isEditingFieldData
@@ -172,18 +158,19 @@ extension LoginDetailViewController: UITableViewDataSource {
 
         case .passwordItem:
             let loginCell = cell(forIndexPath: indexPath)
-            loginCell.highlightedLabelTitle = NSLocalizedString("Password", tableName: "LoginManager", comment: "Label displayed above the password row in Login Detail View.")
-            loginCell.descriptionLabel.text = login.password
+            loginCell.highlightedLabelTitle = .LoginDetailPassword
+            loginCell.descriptionLabel.text = login.decryptedPassword
             loginCell.descriptionLabel.returnKeyType = .default
             loginCell.displayDescriptionAsPassword = true
             loginCell.isEditingFieldData = isEditingFieldData
+            setCellSeparatorHidden(loginCell)
             passwordField = loginCell.descriptionLabel
             passwordField?.accessibilityIdentifier = "passwordField"
             return loginCell
 
         case .websiteItem:
             let loginCell = cell(forIndexPath: indexPath)
-            loginCell.highlightedLabelTitle = NSLocalizedString("Website", tableName: "LoginManager", comment: "Label displayed above the website row in Login Detail View.")
+            loginCell.highlightedLabelTitle = .LoginDetailWebsite
             loginCell.descriptionLabel.text = login.hostname
             websiteField = loginCell.descriptionLabel
             websiteField?.accessibilityIdentifier = "websiteField"
@@ -195,8 +182,8 @@ extension LoginDetailViewController: UITableViewDataSource {
 
         case .lastModifiedSeparator:
             let cell = CenteredDetailCell(style: .subtitle, reuseIdentifier: nil)
-            let created = NSLocalizedString("Created %@", tableName: "LoginManager", comment: "Label describing when the current login was created with the timestamp as the parameter.")
-            let lastModified = NSLocalizedString("Modified %@", tableName: "LoginManager", comment: "Label describing when the current login was last modified with the timestamp as the parameter.")
+            let created: String = .LoginDetailCreatedAt
+            let lastModified: String = .LoginDetailModifiedAt
 
             let lastModifiedFormatted = String(format: lastModified, Date.fromTimestamp(UInt64(login.timePasswordChanged)).toRelativeTimeString(dateStyle: .medium))
             let createdFormatted = String(format: created, Date.fromTimestamp(UInt64(login.timeCreated)).toRelativeTimeString(dateStyle: .medium, timeStyle: .none))
@@ -205,34 +192,40 @@ extension LoginDetailViewController: UITableViewDataSource {
             cell.detailTextLabel?.numberOfLines = 2
             cell.detailTextLabel?.textAlignment = .center
             cell.backgroundColor = view.backgroundColor
+            setCellSeparatorHidden(cell)
             return cell
 
         case .deleteItem:
             let deleteCell = cell(forIndexPath: indexPath)
-            deleteCell.textLabel?.text = NSLocalizedString("Delete", tableName: "LoginManager", comment: "Label for the button used to delete the current login.")
+            deleteCell.textLabel?.text = .LoginDetailDelete
             deleteCell.textLabel?.textAlignment = .center
             deleteCell.textLabel?.textColor = UIColor.theme.general.destructiveRed
             deleteCell.accessibilityTraits = UIAccessibilityTraits.button
             deleteCell.backgroundColor = UIColor.theme.tableView.rowBackground
+            setCellSeparatorFullWidth(deleteCell)
             return deleteCell
         }
     }
 
-    fileprivate func cell(forIndexPath indexPath: IndexPath) -> LoginDetailTableViewCell {
+    private func cell(forIndexPath indexPath: IndexPath) -> LoginDetailTableViewCell {
         let loginCell = LoginDetailTableViewCell()
         loginCell.selectionStyle = .none
         loginCell.delegate = self
         return loginCell
     }
 
-    fileprivate func wrapFooter(_ footer: UITableViewHeaderFooterView, withCellFromTableView tableView: UITableView, atIndexPath indexPath: IndexPath) -> UITableViewCell {
-        let cell = self.cell(forIndexPath: indexPath)
-        cell.selectionStyle = .none
-        cell.addSubview(footer)
-        footer.snp.makeConstraints { make in
-            make.edges.equalTo(cell)
-        }
-        return cell
+    private func setCellSeparatorHidden(_ cell: UITableViewCell) {
+        // Prevent seperator from showing by pushing it off screen by the width of the cell
+        cell.separatorInset = UIEdgeInsets(top: 0,
+                                           left: 0,
+                                           bottom: 0,
+                                           right: view.frame.width)
+    }
+
+    private func setCellSeparatorFullWidth(_ cell: UITableViewCell) {
+        cell.separatorInset = .zero
+        cell.layoutMargins = .zero
+        cell.preservesSuperviewLayoutMargins = false
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -253,8 +246,7 @@ extension LoginDetailViewController: UITableViewDelegate {
         cell.becomeFirstResponder()
 
         let menu = UIMenuController.shared
-        menu.setTargetRect(cell.frame, in: self.tableView)
-        menu.setMenuVisible(true, animated: true)
+        menu.showMenu(from: tableView, rect: cell.frame)
     }
 
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -269,7 +261,7 @@ extension LoginDetailViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         switch InfoItem(rawValue: indexPath.row)! {
         case .breachItem:
-            guard let _ = self.breach else { return 0 }
+            guard let _ = breach else { return 0 }
             return UITableView.automaticDimension
         case .usernameItem, .passwordItem, .websiteItem:
             return LoginDetailUX.InfoRowHeight
@@ -289,9 +281,6 @@ extension LoginDetailViewController: KeyboardHelperDelegate {
         tableView.contentInset.bottom = coveredHeight
     }
 
-    func keyboardHelper(_ keyboardHelper: KeyboardHelper, keyboardDidShowWithState state: KeyboardState) {
-    }
-
     func keyboardHelper(_ keyboardHelper: KeyboardHelper, keyboardWillHideWithState state: KeyboardState) {
         tableView.contentInset.bottom = 0
     }
@@ -301,7 +290,7 @@ extension LoginDetailViewController: KeyboardHelperDelegate {
 extension LoginDetailViewController {
 
     @objc func dismissAlertController() {
-        self.deleteAlert?.dismiss(animated: false, completion: nil)
+        deleteAlert?.dismiss(animated: false, completion: nil)
     }
 
     @objc func didTapBreachLearnMore() {
@@ -309,7 +298,7 @@ extension LoginDetailViewController {
     }
 
     @objc func didTapBreachLink(_ sender: UITapGestureRecognizer? = nil) {
-        guard let domain = self.breach?.domain else { return }
+        guard let domain = breach?.domain else { return }
         var urlComponents = URLComponents()
         urlComponents.host = domain
         urlComponents.scheme = "https"
@@ -317,9 +306,9 @@ extension LoginDetailViewController {
     }
 
     func deleteLogin() {
-        profile.logins.hasSyncedLogins().uponQueue(.main) { yes in
+        profile.hasSyncedLogins().uponQueue(.main) { yes in
             self.deleteAlert = UIAlertController.deleteLoginAlertWithDeleteCallback({ [unowned self] _ in
-                self.profile.logins.delete(id: self.login.id).uponQueue(.main) { _ in
+                self.profile.logins.deleteLogin(id: self.login.id).uponQueue(.main) { _ in
                     _ = self.navigationController?.popViewController(animated: true)
                 }
             }, hasSyncedLogins: yes.successValue ?? true)
@@ -330,7 +319,7 @@ extension LoginDetailViewController {
 
     func onProfileDidFinishSyncing() {
         // Reload details after syncing.
-        profile.logins.get(id: login.id).uponQueue(.main) { result in
+        profile.logins.getLogin(id: login.id).uponQueue(.main) { result in
             if let successValue = result.successValue, let syncedLogin = successValue {
                 self.login = syncedLogin
             }
@@ -355,33 +344,58 @@ extension LoginDetailViewController {
 
         // Only update if user made changes
         guard let username = usernameField?.text, let password = passwordField?.text else { return }
-        guard username != login.username || password != login.password else { return }
 
-        // Keep a copy of the old data in case we fail and need to revert back
-        let oldInfo = (pass: login.password, user: login.username)
-        login.password = password
-        login.username = username
+        guard username != login.decryptedUsername || password != login.decryptedPassword else { return }
 
-        if login.isValid.isSuccess {
-            _ = profile.logins.update(login: login)
-        } else {
-            login.password = oldInfo.pass
-            login.username = oldInfo.user
+        let updatedLogin = LoginEntry(
+            fromLoginEntryFlattened: LoginEntryFlattened(
+                id: login.id,
+                hostname: login.hostname,
+                password: password,
+                username: username,
+                httpRealm: login.httpRealm,
+                formSubmitUrl: login.formSubmitUrl,
+                usernameField: login.usernameField,
+                passwordField: login.passwordField
+            )
+        )
+
+        if updatedLogin.isValid.isSuccess {
+            _ = profile.logins.updateLogin(id: login.id, login: updatedLogin)
         }
     }
 }
 
 // MARK: - Cell Delegate
 extension LoginDetailViewController: LoginDetailTableViewCellDelegate {
+    func textFieldDidEndEditing(_ cell: LoginDetailTableViewCell) { }
+    func textFieldDidChange(_ cell: LoginDetailTableViewCell) { }
 
-    fileprivate func cellForItem(_ item: InfoItem) -> LoginDetailTableViewCell? {
+    func canPerform(action: Selector, for cell: LoginDetailTableViewCell) -> Bool {
+        guard let item = infoItemForCell(cell) else { return false }
+
+        switch item {
+        case .websiteItem:
+            // Menu actions for Website
+            return action == MenuHelper.SelectorCopy || action == MenuHelper.SelectorOpenAndFill
+        case .usernameItem:
+            // Menu actions for Username
+            return action == MenuHelper.SelectorCopy
+        case .passwordItem:
+            // Menu actions for password
+            let showRevealOption = cell.descriptionLabel.isSecureTextEntry ? (action == MenuHelper.SelectorReveal) : (action == MenuHelper.SelectorHide)
+            return action == MenuHelper.SelectorCopy || showRevealOption
+        default:
+            return false
+        }
+    }
+
+    private func cellForItem(_ item: InfoItem) -> LoginDetailTableViewCell? {
         return tableView.cellForRow(at: item.indexPath) as? LoginDetailTableViewCell
     }
 
     func didSelectOpenAndFillForCell(_ cell: LoginDetailTableViewCell) {
-        guard let url = (self.login.formSubmitURL?.asURL ?? self.login.hostname.asURL) else {
-            return
-        }
+        guard let url = (login.formSubmitUrl?.asURL ?? login.hostname.asURL) else { return }
 
         navigationController?.dismiss(animated: true, completion: {
             self.settingsDelegate?.settingsOpenURLInNewTab(url)

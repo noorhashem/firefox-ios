@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 
@@ -29,7 +29,9 @@ class ImageButtonWithLabel: UIView {
 
         label.snp.makeConstraints { make in
             make.top.equalTo(button.snp.bottom).offset(3)
-            make.leading.trailing.bottom.equalTo(self)
+            make.leading.equalTo(button.snp.leading)
+            make.trailing.equalTo(button.snp.trailing)
+            make.bottom.equalTo(self)
         }
 
         label.numberOfLines = 0

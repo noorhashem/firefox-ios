@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -47,11 +47,16 @@ extension SQLiteHistory {
     }
 
     class func pageMetadataColumnFactory(_ row: SDRow) -> PageMetadata? {
-        guard let siteURL = row["url"] as? String else {
-            return nil
-        }
+        guard let siteURL = row["url"] as? String else { return nil }
 
-        return PageMetadata(id: row["metadata_id"] as? Int, siteURL: siteURL, mediaURL: row["media_url"] as? String, title: row["metadata_title"] as? String, description: row["description"] as? String, type: row["type"] as? String, providerName: row["provider_name"] as? String)
+        return PageMetadata(
+            id: row["metadata_id"] as? Int,
+            siteURL: siteURL,
+            mediaURL: row["media_url"] as? String,
+            title: row["metadata_title"] as? String,
+            description: row["description"] as? String,
+            type: row["type"] as? String,
+            providerName: row["provider_name"] as? String)
     }
 
     class func iconHistoryColumnFactory(_ row: SDRow) -> Site {
@@ -70,5 +75,9 @@ extension SQLiteHistory {
         let site = basicHistoryColumnFactory(row)
         site.metadata = pageMetadataColumnFactory(row)
         return site
+    }
+
+    class func countAllVisitsFactory(_ row: SDRow) -> Int? {
+        return row[0] as? Int
     }
 }

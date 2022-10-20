@@ -27,7 +27,8 @@ public class ContentBlockerGenLib {
     }
 
     func parseEntityList(json: [String: Any]) {
-        json.forEach {
+        let entities = json["entities"]! as! [String: Any]
+        entities.forEach {
             let company = $0.key
             let related = ($0.value as! [String: [String]])["properties"]!
             companyToRelatedDomains[company] = related
@@ -35,7 +36,7 @@ public class ContentBlockerGenLib {
     }
 
     func buildUnlessDomain(_ domains: [String]) -> String {
-        guard domains.count > 0 else { return "" }
+        guard !domains.isEmpty else { return "" }
         let result = domains.reduce("", { $0 + "\"*\($1)\"," }).dropLast()
         return "[" + result + "]"
     }
@@ -94,4 +95,3 @@ public class ContentBlockerGenLib {
         return result
     }
 }
-

@@ -1,12 +1,12 @@
 ---
 name: "🎁 Feature request"
 about: Suggest an idea for this project
-labels: "Feature 🎁"
+labels: "Feature-Request"
 
 ---
 
-### Why/User Benefit/User Problem
+### User Problem
+> Why should we implement this? What is the user benefit?
 
-### Acceptance Criteria (how do I know when I’m done?)
-
-### Not included
+### Ideas for Solution
+> Let us know if you have an idea on how to solve this user problem

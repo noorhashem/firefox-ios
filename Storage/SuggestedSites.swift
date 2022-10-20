@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Shared
@@ -24,7 +24,7 @@ open class SuggestedSitesCursor: ArrayCursor<SuggestedSite> {
     fileprivate init() {
         let locale = Locale.current
         let sites = DefaultSuggestedSites.sites[locale.identifier] ??
-                    DefaultSuggestedSites.sites["default"]! as Array<SuggestedSiteData>
+                    DefaultSuggestedSites.sites["default"]! as [SuggestedSiteData]
         let tiles = sites.map({ data -> SuggestedSite in
             var site = data
             if let domainMap = DefaultSuggestedSites.urlMap[data.url], let localizedURL = domainMap[locale.identifier] {

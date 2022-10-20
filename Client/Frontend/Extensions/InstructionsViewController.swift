@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import SnapKit
@@ -17,19 +17,19 @@ protocol InstructionsViewControllerDelegate: AnyObject {
     func instructionsViewControllerDidClose(_ instructionsViewController: InstructionsViewController)
 }
 
-private func highlightLink(_ s: NSString, withColor color: UIColor) -> NSAttributedString {
-    let start = s.range(of: "<")
+private func highlightLink(_ string: NSString, withColor color: UIColor) -> NSAttributedString {
+    let start = string.range(of: "<")
     if start.location == NSNotFound {
-        return NSAttributedString(string: s as String)
+        return NSAttributedString(string: string as String)
     }
 
-    var s: NSString = s.replacingCharacters(in: start, with: "") as NSString
-    let end = s.range(of: ">")
-    s = s.replacingCharacters(in: end, with: "") as NSString
-    let a = NSMutableAttributedString(string: s as String)
-    let r = NSRange(location: start.location, length: end.location-start.location)
-    a.addAttribute(NSAttributedString.Key.foregroundColor, value: color, range: r)
-    return a
+    var string: NSString = string.replacingCharacters(in: start, with: "") as NSString
+    let end = string.range(of: ">")
+    string = string.replacingCharacters(in: end, with: "") as NSString
+    let attributedString = NSMutableAttributedString(string: string as String)
+    let range = NSRange(location: start.location, length: end.location-start.location)
+    attributedString.addAttribute(NSAttributedString.Key.foregroundColor, value: color, range: range)
+    return attributedString
 }
 
 func setupHelpView(_ view: UIView, introText: String, showMeText: String) {
@@ -37,7 +37,7 @@ func setupHelpView(_ view: UIView, introText: String, showMeText: String) {
     imageView.image = UIImage(named: "emptySync")
     view.addSubview(imageView)
     imageView.snp.makeConstraints { (make) -> Void in
-        make.top.equalTo(view).offset(InstructionsViewControllerUX.TopPadding)
+        make.top.equalTo(view.safeAreaLayoutGuide.snp.top).offset(InstructionsViewControllerUX.TopPadding)
         make.centerX.equalTo(view)
     }
 
@@ -75,15 +75,14 @@ class InstructionsViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        edgesForExtendedLayout = []
         view.backgroundColor = UIColor.Photon.White100
 
-        navigationItem.leftBarButtonItem = UIBarButtonItem(title: Strings.SendToCloseButton, style: .done, target: self, action: #selector(close))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(title: .SendToCloseButton, style: .done, target: self, action: #selector(close))
         navigationItem.leftBarButtonItem?.accessibilityIdentifier = "InstructionsViewController.navigationItem.leftBarButtonItem"
 
         setupHelpView(view,
-            introText: Strings.SendToNotSignedInText,
-                showMeText: Strings.SendToNotSignedInMessage)
+            introText: .SendToNotSignedInText,
+                showMeText: .SendToNotSignedInMessage)
     }
 
     @objc func close() {

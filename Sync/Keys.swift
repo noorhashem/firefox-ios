@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Account
 import Shared
-import FxA
+
 import SwiftyJSON
 
 /**
@@ -104,9 +104,9 @@ open class Keys: Equatable {
         self.valid = false
     }
 
-    public convenience init(downloaded: EnvelopeJSON, master: KeyBundle) {
+    public convenience init(downloaded: EnvelopeJSON, main: KeyBundle) {
         let f: (JSON) -> KeysPayload = { KeysPayload($0) }
-        let keysRecord = Record<KeysPayload>.fromEnvelope(downloaded, payloadFactory: keysPayloadFactory(keyBundle: master, f))
+        let keysRecord = Record<KeysPayload>.fromEnvelope(downloaded, payloadFactory: keysPayloadFactory(keyBundle: main, f))
         self.init(payload: keysRecord?.payload)
     }
 
@@ -135,7 +135,7 @@ open class Keys: Equatable {
         return KeysPayload(json)
     }
 
-    public static func ==(lhs: Keys, rhs: Keys) -> Bool {
+    public static func == (lhs: Keys, rhs: Keys) -> Bool {
         return lhs.valid == rhs.valid &&
             lhs.defaultBundle == rhs.defaultBundle &&
             lhs.collectionKeys == rhs.collectionKeys
@@ -164,4 +164,3 @@ public struct RecordEncrypter<T: CleartextPayloadJSON> {
         self.factory = factory
     }
 }
-

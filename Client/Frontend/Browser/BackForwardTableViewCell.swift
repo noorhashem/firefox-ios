@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import UIKit
 import Storage
@@ -19,25 +19,21 @@ class BackForwardTableViewCell: UITableViewCell {
         static let fontSize: CGFloat = 12.0
         static let textColor = UIColor.Photon.Grey80
     }
+    lazy var faviconView: UIImageView = .build { imageView in
+        imageView.image = FaviconFetcher.defaultFavicon
+        imageView.backgroundColor = UIColor.Photon.White100
+        imageView.layer.cornerRadius = 6
+        imageView.layer.borderWidth = 0.5
+        imageView.layer.borderColor = UIColor(white: 0, alpha: 0.1).cgColor
+        imageView.layer.masksToBounds = true
+        imageView.contentMode = .center
+    }
 
-    lazy var faviconView: UIImageView = {
-        let faviconView = UIImageView(image: FaviconFetcher.defaultFavicon)
-        faviconView.backgroundColor = UIColor.Photon.White100
-        faviconView.layer.cornerRadius = 6
-        faviconView.layer.borderWidth = 0.5
-        faviconView.layer.borderColor = UIColor(white: 0, alpha: 0.1).cgColor
-        faviconView.layer.masksToBounds = true
-        faviconView.contentMode = .center
-        return faviconView
-    }()
-
-    lazy var label: UILabel = {
-        let label = UILabel()
+    lazy var label: UILabel = .build { label in
         label.text = " "
         label.font = label.font.withSize(BackForwardViewCellUX.fontSize)
         label.textColor = UIColor.theme.tabTray.tabTitleText
-        return label
-    }()
+    }
 
     var connectingForwards = true
     var connectingBackwards = true
@@ -52,9 +48,9 @@ class BackForwardTableViewCell: UITableViewCell {
 
     var site: Site? {
         didSet {
-            if let s = site {
-                faviconView.setFavicon(forSite: s) { [weak self] in
-                    if InternalURL.isValid(url: s.tileURL) {
+            if let site = site {
+                faviconView.setFavicon(forSite: site) { [weak self] in
+                    if InternalURL.isValid(url: site.tileURL) {
                         self?.faviconView.image = UIImage(named: "faviconFox")
                         self?.faviconView.image = self?.faviconView.image?.createScaled(CGSize(width: BackForwardViewCellUX.IconSize, height: BackForwardViewCellUX.IconSize))
                         self?.faviconView.backgroundColor = UIColor.Photon.White100
@@ -66,9 +62,9 @@ class BackForwardTableViewCell: UITableViewCell {
                         self?.faviconView.backgroundColor = .white
                     }
                 }
-                var title = s.title
+                var title = site.title
                 if title.isEmpty {
-                    title = s.url
+                    title = site.url
                 }
                 label.text = title
                 setNeedsLayout()
@@ -84,18 +80,15 @@ class BackForwardTableViewCell: UITableViewCell {
         contentView.addSubview(faviconView)
         contentView.addSubview(label)
 
-        faviconView.snp.makeConstraints { make in
-            make.height.equalTo(BackForwardViewCellUX.faviconWidth)
-            make.width.equalTo(BackForwardViewCellUX.faviconWidth)
-            make.centerY.equalTo(self)
-            make.leading.equalTo(self.snp.leading).offset(BackForwardViewCellUX.faviconPadding)
-        }
-
-        label.snp.makeConstraints { make in
-            make.centerY.equalTo(self)
-            make.leading.equalTo(faviconView.snp.trailing).offset(BackForwardViewCellUX.labelPadding)
-            make.trailing.equalTo(self.snp.trailing).offset(-BackForwardViewCellUX.labelPadding)
-        }
+        NSLayoutConstraint.activate([
+            faviconView.heightAnchor.constraint(equalToConstant: CGFloat(BackForwardViewCellUX.faviconWidth)),
+            faviconView.widthAnchor.constraint(equalToConstant: CGFloat(BackForwardViewCellUX.faviconWidth)),
+            faviconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            faviconView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: CGFloat(BackForwardViewCellUX.faviconPadding)),
+            label.centerYAnchor.constraint(equalTo: centerYAnchor),
+            label.leadingAnchor.constraint(equalTo: faviconView.trailingAnchor, constant: CGFloat(BackForwardViewCellUX.labelPadding)),
+            label.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: CGFloat(-BackForwardViewCellUX.labelPadding))
+        ])
 
     }
 
@@ -107,9 +100,9 @@ class BackForwardTableViewCell: UITableViewCell {
         super.draw(rect)
         guard let context = UIGraphicsGetCurrentContext() else { return }
 
-        var startPoint = CGPoint(x: rect.origin.x + BackForwardViewCellUX.faviconPadding + CGFloat(Double(BackForwardViewCellUX.faviconWidth)*0.5),
+        var startPoint = CGPoint(x: rect.origin.x + BackForwardViewCellUX.faviconPadding + CGFloat(Double(BackForwardViewCellUX.faviconWidth)*0.5) + safeAreaInsets.left,
                                      y: rect.origin.y + (connectingForwards ?  0 : rect.size.height/2))
-        var endPoint   = CGPoint(x: rect.origin.x + BackForwardViewCellUX.faviconPadding + CGFloat(Double(BackForwardViewCellUX.faviconWidth)*0.5),
+        var endPoint   = CGPoint(x: rect.origin.x + BackForwardViewCellUX.faviconPadding + CGFloat(Double(BackForwardViewCellUX.faviconWidth)*0.5) + safeAreaInsets.left,
                                      y: rect.origin.y + rect.size.height - (connectingBackwards  ? 0 : rect.size.height/2))
 
         // flip the x component if RTL

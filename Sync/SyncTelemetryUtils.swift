@@ -1,17 +1,14 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
-import Foundation
+import UIKit
+import Glean
 import Shared
 import Account
 import Storage
 import SwiftyJSON
 import SyncTelemetry
-
-fileprivate let log = Logger.syncLogger
-
-public let PrefKeySyncEvents = "sync.telemetry.events"
 
 public enum SyncReason: String {
     case startup = "startup"
@@ -221,10 +218,12 @@ extension SyncOperationStatsSession: DictionaryRepresentable {
 
 public enum SyncPingError: MaybeErrorType {
     case failedToRestoreScratchpad
+    case emptyPing
 
     public var description: String {
         switch self {
         case .failedToRestoreScratchpad: return "Failed to restore Scratchpad from prefs"
+        case .emptyPing: return "Can't send ping without events or syncs"
         }
     }
 }
@@ -243,10 +242,7 @@ public protocol SyncPingFailureFormattable {
 public struct SyncPing: SyncTelemetryPing {
     public private(set) var payload: JSON
 
-    public static func from(result: SyncOperationResult,
-                            remoteClientsAndTabs: RemoteClientsAndTabs,
-                            prefs: Prefs,
-                            why: SyncPingReason) -> Deferred<Maybe<SyncPing>> {
+    static func pingFields(prefs: Prefs, why: SyncPingReason) -> Deferred<Maybe<(token: TokenServerToken, fields: [String: Any])>> {
         // Grab our token so we can use the hashed_fxa_uid and clientGUID from our scratchpad for
         // our ping's identifiers
         return RustFirefoxAccounts.shared.syncAuthState.token(Date.now(), canBeExpired: false) >>== { (token, kSync) in
@@ -255,25 +251,45 @@ public struct SyncPing: SyncTelemetryPing {
                 return deferMaybe(SyncPingError.failedToRestoreScratchpad)
             }
 
-            var ping: [String: Any] = pingCommonData(
+            let ping: [String: Any] = pingCommonData(
                 why: why,
                 hashedUID: token.hashedFxAUID,
                 hashedDeviceID: (scratchpad.clientGUID + token.hashedFxAUID).sha256.hexEncodedString
             )
 
+            return deferMaybe((token, ping))
+        }
+    }
+
+    public static func from(result: SyncOperationResult,
+                            remoteClientsAndTabs: RemoteClientsAndTabs,
+                            prefs: Prefs,
+                            why: SyncPingReason) -> Deferred<Maybe<SyncPing>> {
+        return pingFields(prefs: prefs, why: why) >>== { (token, fields) in
+            var ping = fields
+
             // TODO: We don't cache our sync pings so if it fails, it fails. Once we add
             // some kind of caching we'll want to make sure we don't dump the events if
             // the ping has failed.
-            let pickledEvents = prefs.arrayForKey(PrefKeySyncEvents) as? [Data] ?? []
-            let events = pickledEvents.compactMap(Event.unpickle).map { $0.toArray() }
+            let events = Event.takeAll(fromPrefs: prefs).map { $0.toArray() }
             ping["events"] = events
-            prefs.setObject(nil, forKey: PrefKeySyncEvents)
 
             return dictionaryFrom(result: result, storage: remoteClientsAndTabs, token: token) >>== { syncDict in
                 // TODO: Split the sync ping metadata from storing a single sync.
                 ping["syncs"] = [syncDict]
                 return deferMaybe(SyncPing(payload: JSON(ping)))
             }
+        }
+    }
+
+    public static func fromQueuedEvents(prefs: Prefs, why: SyncPingReason) -> Deferred<Maybe<SyncPing>> {
+        if !Event.hasQueuedEvents(inPrefs: prefs) {
+            return deferMaybe(SyncPingError.emptyPing)
+        }
+        return pingFields(prefs: prefs, why: why) >>== { (_, fields) in
+            var ping = fields
+            ping["events"] = Event.takeAll(fromPrefs: prefs).map { $0.toArray() }
+            return deferMaybe(SyncPing(payload: JSON(ping)))
         }
     }
 
@@ -354,16 +370,116 @@ public struct SyncPing: SyncTelemetryPing {
             // start, return why and a reason.
             switch status {
             case .completed(let stats):
-                engine.merge(with: stats.asDictionary())
+                engine = engine.merge(with: stats.asDictionary())
             case .partial(let stats):
-                engine.merge(with: stats.asDictionary())
+                engine = engine.merge(with: stats.asDictionary())
             case .notStarted(let reason):
-                engine.merge(with: [
+                engine = engine.merge(with: [
                     "status": reason.telemetryId
                 ])
             }
 
             return engine
+        }
+    }
+}
+
+public class GleanSyncOperationHelper {
+    public init () {}
+
+    public func start() {
+        _ = GleanMetrics.Sync.syncUuid.generateAndSet()
+    }
+
+    public func end(_ result: SyncOperationResult) {
+        if let engineResults = result.engineResults.successValue {
+            engineResults.forEach { result in
+                let (name, status) = result
+                switch status {
+                case .completed(let stats):
+                    self.recordSyncEngineStats(name, stats)
+                case .partial(let stats):
+                    self.recordSyncEngineStats(name, stats)
+                case .notStarted(let reason):
+                    self.recordSyncEngineFailure(name, reason.telemetryId)
+                }
+
+                self.submitSyncEnginePing(name)
+            }
+        } else if let failure = result.engineResults.failureValue {
+            var errorName: SyncPingFailureReasonName
+            if let formattableFailure = failure as? SyncPingFailureFormattable {
+                errorName = formattableFailure.failureReasonName
+            } else {
+                errorName = .unexpectedError
+            }
+
+            GleanMetrics.Sync.failureReason[errorName.rawValue].add()
+        }
+
+        GleanMetrics.Pings.shared.tempSync.submit()
+    }
+
+    private func recordSyncEngineStats(_ engineName: String, _ stats: SyncEngineStatsSession) {
+        // Create maps on labels to stat value,
+        // keeping only the values that are above zero.
+        //
+        // If we attempt to add 0 to a Glean counter,
+        // Glean will record an error. We don't want that here.
+        let incomingLabelsToValue = [
+            ("applied", stats.downloadStats.succeeded),
+            ("reconciled", stats.downloadStats.reconciled),
+            ("failed_to_apply", stats.downloadStats.failed)
+        ].filter { (_, stat) in stat > 0 }
+        let outgoingLabelsToValue = [
+            ("uploaded", stats.uploadStats.sent),
+            ("failed_to_upload", stats.uploadStats.sentFailed)
+        ].filter { (_, stat) in stat > 0 }
+
+        switch engineName {
+        case "tabs":
+            incomingLabelsToValue.forEach { (l, v) in GleanMetrics.RustTabsSync.incoming[l].add(Int32(v))}
+            outgoingLabelsToValue.forEach { (l, v) in GleanMetrics.RustTabsSync.outgoing[l].add(Int32(v)) }
+        case "bookmarks":
+            incomingLabelsToValue.forEach { (l, v) in GleanMetrics.BookmarksSync.incoming[l].add(Int32(v))}
+            outgoingLabelsToValue.forEach { (l, v) in GleanMetrics.BookmarksSync.outgoing[l].add(Int32(v)) }
+        case "history":
+            incomingLabelsToValue.forEach { (l, v) in GleanMetrics.HistorySync.incoming[l].add(Int32(v))}
+            outgoingLabelsToValue.forEach { (l, v) in GleanMetrics.HistorySync.outgoing[l].add(Int32(v)) }
+        case "logins":
+            incomingLabelsToValue.forEach { (l, v) in GleanMetrics.LoginsSync.incoming[l].add(Int32(v))}
+            outgoingLabelsToValue.forEach { (l, v) in GleanMetrics.LoginsSync.outgoing[l].add(Int32(v)) }
+        case "clients":
+            incomingLabelsToValue.forEach { (l, v) in GleanMetrics.ClientsSync.incoming[l].add(Int32(v))}
+            outgoingLabelsToValue.forEach { (l, v) in GleanMetrics.ClientsSync.outgoing[l].add(Int32(v)) }
+        default:
+            break
+        }
+    }
+
+    private func recordSyncEngineFailure(_ engineName: String, _ reason: String) {
+        let correctedReson = String(reason.dropFirst("sync.not_started.reason.".count))
+
+        switch engineName {
+        case "tabs": GleanMetrics.RustTabsSync.failureReason[correctedReson].add()
+        case "bookmarks": GleanMetrics.BookmarksSync.failureReason[correctedReson].add()
+        case "history": GleanMetrics.HistorySync.failureReason[correctedReson].add()
+        case "logins": GleanMetrics.LoginsSync.failureReason[correctedReson].add()
+        case "clients": GleanMetrics.ClientsSync.failureReason[correctedReson].add()
+        default:
+            break
+        }
+    }
+
+    private func submitSyncEnginePing(_ engineName: String) {
+        switch engineName {
+        case "tabs": GleanMetrics.Pings.shared.tempRustTabsSync.submit()
+        case "bookmarks": GleanMetrics.Pings.shared.tempBookmarksSync.submit()
+        case "history": GleanMetrics.Pings.shared.tempHistorySync.submit()
+        case "logins": GleanMetrics.Pings.shared.tempLoginsSync.submit()
+        case "clients": GleanMetrics.Pings.shared.tempClientsSync.submit()
+        default:
+            break
         }
     }
 }

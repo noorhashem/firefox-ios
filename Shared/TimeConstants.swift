@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -17,7 +17,7 @@ public let OneHourInMilliseconds = 60 * OneMinuteInMilliseconds
 public let OneMinuteInMilliseconds = 60 * OneSecondInMilliseconds
 public let OneSecondInMilliseconds: UInt64 = 1000
 
-fileprivate let rfc822DateFormatter: DateFormatter = {
+private let rfc822DateFormatter: DateFormatter = {
     let dateFormatter = DateFormatter()
     dateFormatter.timeZone = TimeZone(abbreviation: "GMT")
     dateFormatter.dateFormat = "EEE',' dd MMM yyyy HH':'mm':'ss 'GMT'"
@@ -25,9 +25,21 @@ fileprivate let rfc822DateFormatter: DateFormatter = {
     return dateFormatter
 }()
 
+public struct DateDifference {
+    public var month: Int?
+    public var day: Int?
+    public var hour: Int?
+    public var minute: Int?
+    public var second: Int?
+}
+
 extension TimeInterval {
     public static func fromMicrosecondTimestamp(_ microsecondTimestamp: MicrosecondTimestamp) -> TimeInterval {
         return Double(microsecondTimestamp) / 1000000
+    }
+
+    public static func timeIntervalSince1970ToDate(timeInterval: TimeInterval) -> Date {
+        Date(timeIntervalSince1970: timeInterval)
     }
 }
 
@@ -42,20 +54,24 @@ extension Date {
         return UInt64(1000 * Date().timeIntervalSince1970)
     }
 
-    public func toMicrosecondTimestamp() -> MicrosecondTimestamp {
-        return UInt64(1_000_000 * timeIntervalSince1970)
-    }
-
     public static func nowNumber() -> NSNumber {
         return NSNumber(value: now() as UInt64)
     }
 
-    public static func nowMicroseconds() -> MicrosecondTimestamp {
-        return UInt64(1000000 * Date().timeIntervalSince1970)
+    public func toMillisecondsSince1970() -> Int64 {
+        return Int64((self.timeIntervalSince1970 * 1000.0).rounded())
+    }
+
+    public func toMicrosecondsSince1970() -> MicrosecondTimestamp {
+        return UInt64(1_000_000 * self.timeIntervalSince1970)
     }
 
     public static func fromTimestamp(_ timestamp: Timestamp) -> Date {
         return Date(timeIntervalSince1970: Double(timestamp) / 1000)
+    }
+
+    public func toTimestamp() -> Timestamp {
+        return UInt64(1000 * timeIntervalSince1970)
     }
 
     public static func fromMicrosecondTimestamp(_ microsecondTimestamp: MicrosecondTimestamp) -> Date {
@@ -73,7 +89,7 @@ extension Date {
         }
 
         if components.month == 1 {
-            return String(format: NSLocalizedString("more than a month ago", comment: "Relative date for dates older than a month and less than two months."))
+            return String(format: .TimeConstantMoreThanAMonth)
         }
 
         if components.month ?? 0 > 1 {
@@ -81,30 +97,86 @@ extension Date {
         }
 
         if components.weekOfYear ?? 0 > 0 {
-            return String(format: NSLocalizedString("more than a week ago", comment: "Description for a date more than a week ago, but less than a month ago."))
+            return String(format: .TimeConstantMoreThanAWeek)
         }
 
         if components.day == 1 {
-            return String(format: NSLocalizedString("yesterday", comment: "Relative date for yesterday."))
+            return String(format: .TimeConstantYesterday)
         }
 
         if components.day ?? 0 > 1 {
-            return String(format: NSLocalizedString("this week", comment: "Relative date for date in past week."), String(describing: components.day))
+            return String(format: .TimeConstantThisWeek, String(describing: components.day))
         }
 
         if components.hour ?? 0 > 0 || components.minute ?? 0 > 0 {
             // Can't have no time specified for this formatting case.
             let timeStyle = timeStyle != .none ? timeStyle : .short
             let absoluteTime = DateFormatter.localizedString(from: self, dateStyle: .none, timeStyle: timeStyle)
-            let format = NSLocalizedString("today at %@", comment: "Relative date for date older than a minute.")
-            return String(format: format, absoluteTime)
+            return String(format: .TimeConstantRelativeToday, absoluteTime)
         }
 
-        return String(format: NSLocalizedString("just now", comment: "Relative time for a tab that was visited within the last few moments."))
+        return String(format: .TimeConstantJustNow)
     }
 
     public func toRFC822String() -> String {
         return rfc822DateFormatter.string(from: self)
+    }
+
+    public static func differenceBetween(_ firstDate: Date, and previousDate: Date) -> DateDifference {
+        let day = Calendar.current.dateComponents([.day], from: previousDate, to: firstDate).day
+        let month = Calendar.current.dateComponents([.month], from: previousDate, to: firstDate).month
+        let hour = Calendar.current.dateComponents([.hour], from: previousDate, to: firstDate).hour
+        let minute = Calendar.current.dateComponents([.minute], from: previousDate, to: firstDate).minute
+        let second = Calendar.current.dateComponents([.second], from: previousDate, to: firstDate).second
+
+        return DateDifference(month: month,
+                              day: day,
+                              hour: hour,
+                              minute: minute,
+                              second: second)
+    }
+
+    static func - (lhs: Date, rhs: Date) -> TimeInterval {
+        return lhs.timeIntervalSinceReferenceDate - rhs.timeIntervalSinceReferenceDate
+    }
+}
+
+extension Date {
+    public static var yesterday: Date { return Date().dayBefore }
+    public static var tomorrow: Date { return Date().dayAfter }
+    public var lastTwoWeek: Date {
+        return Calendar.current.date(byAdding: .day, value: -14, to: noon) ?? Date()
+    }
+    public var lastWeek: Date {
+        return Calendar.current.date(byAdding: .day, value: -8, to: noon) ?? Date()
+    }
+    public var older: Date {
+        return Calendar.current.date(byAdding: .day, value: -20, to: noon) ?? Date()
+    }
+    public var dayBefore: Date {
+        return Calendar.current.date(byAdding: .day, value: -1, to: noon) ?? Date()
+    }
+    public var dayAfter: Date {
+        return Calendar.current.date(byAdding: .day, value: 1, to: noon) ?? Date()
+    }
+    public var noon: Date {
+        return Calendar.current.date(bySettingHour: 12, minute: 0, second: 0, of: self) ?? Date()
+    }
+
+    public func isToday() -> Bool {
+        return Calendar.current.isDateInToday(self)
+    }
+
+    public func isYesterday() -> Bool {
+        return Calendar.current.isDateInYesterday(self)
+    }
+
+    public func isWithinLast7Days() -> Bool {
+        return (Date().lastWeek ... Date()).contains(self)
+    }
+
+    public func isWithinLast14Days() -> Bool {
+        return (Date().lastTwoWeek ... Date()).contains(self)
     }
 }
 
@@ -115,8 +187,7 @@ let MaxTimestampAsDouble = Double(UInt64.max)
  *  when seconds were expected.
  */
 public func someKindOfTimestampStringToTimestamp(_ input: String) -> Timestamp? {
-    var double = 0.0
-    if Scanner(string: input).scanDouble(&double) {
+    if let double = Scanner(string: input).scanDouble() {
         // This should never happen. Hah!
         if double.isNaN || double.isInfinite {
             return nil
@@ -150,8 +221,7 @@ public func someKindOfTimestampStringToTimestamp(_ input: String) -> Timestamp? 
 }
 
 public func decimalSecondsStringToTimestamp(_ input: String) -> Timestamp? {
-    var double = 0.0
-    if Scanner(string: input).scanDouble(&double) {
+    if let double = Scanner(string: input).scanDouble() {
         // This should never happen. Hah!
         if double.isNaN || double.isInfinite {
             return nil
@@ -177,4 +247,9 @@ public func decimalSecondsStringToTimestamp(_ input: String) -> Timestamp? {
 public func millisecondsToDecimalSeconds(_ input: Timestamp) -> String {
     let val = Double(input) / 1000
     return String(format: "%.2F", val)
+}
+
+public func millisecondsToSeconds(_ input: Timestamp) -> UInt64 {
+    let val = input / 1000
+    return val
 }

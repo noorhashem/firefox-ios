@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import WebKit
 import Shared
@@ -38,7 +38,7 @@ enum BlocklistFileName: String, CaseIterable {
 
     case advertisingCookies = "disconnect-block-cookies-advertising"
     case analyticsCookies = "disconnect-block-cookies-analytics"
-    //case contentCookies = "disconnect-block-cookies-content"
+    // case contentCookies = "disconnect-block-cookies-content"
     case socialCookies = "disconnect-block-cookies-social"
 
     var filename: String { return self.rawValue }
@@ -85,8 +85,8 @@ class ContentBlocker {
 
         TPStatsBlocklistChecker.shared.startup()
 
-        removeOldListsByDateFromStore() {
-            self.removeOldListsByNameFromStore() {
+        removeOldListsByDateFromStore {
+            self.removeOldListsByNameFromStore {
                 self.compileListsNotInStore {
                     self.setupCompleted = true
                     NotificationCenter.default.post(name: .contentBlockerTabSetupRequired, object: nil)
@@ -116,7 +116,7 @@ class ContentBlocker {
             let name = list.filename
             ruleStore.lookUpContentRuleList(forIdentifier: name) { rule, error in
                 guard let rule = rule else {
-                    let msg = "lookUpContentRuleList for \(name):  \(error?.localizedDescription ?? "empty rules")"
+                    let msg = "lookUpContentRuleList for \(name): \(error?.localizedDescription ?? "empty rules")"
                     print("Content blocker error: \(msg)")
                     return
                 }
@@ -148,8 +148,8 @@ class ContentBlocker {
         }
 
         // Async required here to ensure remove() call is processed.
-        DispatchQueue.main.async() { [weak tab] in
-            tab?.currentWebView()?.evaluateJavaScript("window.__firefox__.NoImageMode.setEnabled(\(enabled))")
+        DispatchQueue.main.async { [weak tab] in
+            tab?.currentWebView()?.evaluateJavascriptInDefaultContentWorld("window.__firefox__.NoImageMode.setEnabled(\(enabled))")
         }
     }
 }
@@ -163,9 +163,10 @@ extension ContentBlocker {
     private func loadJsonFromBundle(forResource file: String, completion: @escaping (_ jsonString: String) -> Void) {
         DispatchQueue.global().async {
             guard let path = Bundle.main.path(forResource: file, ofType: "json"),
-                let source = try? String(contentsOfFile: path, encoding: .utf8) else {
-                    assert(false)
-                    return
+                  let source = try? String(contentsOfFile: path, encoding: .utf8)
+            else {
+                assert(false)
+                return
             }
 
             DispatchQueue.main.async {
@@ -238,7 +239,7 @@ extension ContentBlocker {
 
         UserDefaults.standard.set(fileDate, forKey: "blocker-file-date")
 
-        removeAllRulesInStore() {
+        removeAllRulesInStore {
             completion()
         }
     }

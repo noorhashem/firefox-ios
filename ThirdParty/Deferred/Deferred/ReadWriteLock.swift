@@ -8,7 +8,7 @@
 
 import Foundation
 
-public protocol ReadWriteLock: class {
+public protocol ReadWriteLock: AnyObject {
     func withReadLock<T>(block: () -> T) -> T
     func withWriteLock<T>(block: () -> T) -> T
 }
@@ -20,7 +20,7 @@ public final class GCDReadWriteLock: ReadWriteLock {
 
     public func withReadLock<T>(block: () -> T) -> T {
         var result: T!
-        queue.sync() {
+        queue.sync {
             result = block()
         }
         return result

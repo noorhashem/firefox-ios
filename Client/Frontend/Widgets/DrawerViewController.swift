@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import SnapKit
@@ -35,7 +35,7 @@ public class DrawerView: UIView {
     }
 }
 
-public class DrawerViewController: UIViewController, Themeable {
+public class DrawerViewController: UIViewController, NotificationThemeable {
     public let childViewController: UIViewController
 
     public let drawerView = DrawerView()
@@ -107,7 +107,7 @@ public class DrawerViewController: UIViewController, Themeable {
         let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didRecognizeTapGesture))
         backgroundOverlayView.addGestureRecognizer(tapGestureRecognizer)
 
-        drawerView.backgroundColor = ThemeManager.instance.currentName == .dark ? UIColor.theme.tableView.rowBackground : UIColor.theme.tableView.headerBackground
+        drawerView.backgroundColor = LegacyThemeManager.instance.currentName == .dark ? UIColor.theme.tableView.rowBackground : UIColor.theme.tableView.headerBackground
         view.addSubview(drawerView)
 
         let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(didRecognizePanGesture))
@@ -148,7 +148,7 @@ public class DrawerViewController: UIViewController, Themeable {
     }
 
     public func applyTheme() {
-        drawerView.backgroundColor = ThemeManager.instance.currentName == .dark ? UIColor.theme.tableView.rowBackground : UIColor.theme.tableView.headerBackground
+        drawerView.backgroundColor = LegacyThemeManager.instance.currentName == .dark ? UIColor.theme.tableView.rowBackground : UIColor.theme.tableView.headerBackground
     }
 
     override public func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -199,26 +199,20 @@ public class DrawerViewController: UIViewController, Themeable {
     }
 
     @objc fileprivate func didRecognizeTapGesture(_ gestureRecognizer: UITapGestureRecognizer) {
-        guard gestureRecognizer.state == .ended else {
-            return
-        }
+        guard gestureRecognizer.state == .ended else { return }
 
         close()
     }
 
     @objc fileprivate func didRecognizePanGesture(_ gestureRecognizer: UIPanGestureRecognizer) {
         // Drawer is not draggable on iPad layout.
-        guard !showingPadLayout else {
-            return
-        }
+        guard !showingPadLayout else { return }
 
         let translation = gestureRecognizer.translation(in: drawerView)
         yPosition += translation.y
         gestureRecognizer.setTranslation(CGPoint.zero, in: drawerView)
 
-        guard gestureRecognizer.state == .ended else {
-            return
-        }
+        guard gestureRecognizer.state == .ended else { return }
 
         let velocity = gestureRecognizer.velocity(in: drawerView).y
         let landingYPosition = yPosition + velocity / 10
@@ -233,14 +227,16 @@ public class DrawerViewController: UIViewController, Themeable {
             duration = 0.25
         }
 
-        UIView.animate(withDuration: duration, animations: {
-            self.yPosition = nextYPosition
-        }) { _ in
-            if nextYPosition > 0 {
-                self.view.removeFromSuperview()
-                self.removeFromParent()
+        UIView.animate(
+            withDuration: duration,
+            animations: {
+                self.yPosition = nextYPosition
+            }) { _ in
+                if nextYPosition > 0 {
+                    self.view.removeFromSuperview()
+                    self.removeFromParent()
+                }
             }
-        }
     }
 
     public func open() {
@@ -257,17 +253,19 @@ public class DrawerViewController: UIViewController, Themeable {
 
     public func close(immediately: Bool = false) {
         let duration = immediately ? 0.0 : 0.25
-        UIView.animate(withDuration: duration, animations: {
-            if self.showingPadLayout {
-                self.xPosition = DrawerViewControllerUX.DrawerPadWidth
-            } else {
-                self.yPosition = self.view.frame.maxY
+        UIView.animate(
+            withDuration: duration,
+            animations: {
+                if self.showingPadLayout {
+                    self.xPosition = DrawerViewControllerUX.DrawerPadWidth
+                } else {
+                    self.yPosition = self.view.frame.maxY
+                }
+            }) { _ in
+                self.isOpen = false
+                self.view.removeFromSuperview()
+                self.removeFromParent()
             }
-        }) { _ in
-            self.isOpen = false
-            self.view.removeFromSuperview()
-            self.removeFromParent()
-        }
     }
 }
 

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import WebKit
@@ -13,7 +13,7 @@ extension WKWebView {
     // Use JS to redirect the page without adding a history entry
     func replaceLocation(with url: URL) {
         let safeUrl = url.absoluteString.replacingOccurrences(of: "'", with: apostropheEncoded)
-        evaluateJavaScript("location.replace('\(safeUrl)')")
+        evaluateJavascriptInDefaultContentWorld("location.replace('\(safeUrl)')")
     }
 }
 
@@ -26,7 +26,7 @@ func generateResponseThatRedirects(toUrl url: URL) -> (URLResponse, Data) {
     }
 
     urlString = urlString.replacingOccurrences(of: "'", with: apostropheEncoded)
-    
+
     let startTags = "<!DOCTYPE html><html><head><script>"
     let endTags = "</script></head></html>"
     let html = startTags + "location.replace('\(urlString)');" + endTags
@@ -50,7 +50,12 @@ class SessionRestoreHandler: InternalSchemeResponse {
 
         // From here on, handle 'history=' query param
         let response = InternalSchemeHandler.response(forUrl: url.url)
-        guard let sessionRestorePath = Bundle.main.path(forResource: "SessionRestore", ofType: "html"), let html = try? String(contentsOfFile: sessionRestorePath).replacingOccurrences(of: "%INSERT_UUID_VALUE%", with: InternalURL.uuid), let data = html.data(using: .utf8) else {
+        guard let sessionRestorePath = Bundle.main.path(forResource: "SessionRestore", ofType: "html"),
+              let html = try? String(contentsOfFile: sessionRestorePath).replacingOccurrences(
+                of: "%INSERT_UUID_VALUE%",
+                with: InternalURL.uuid),
+              let data = html.data(using: .utf8)
+        else {
             assert(false)
             return nil
         }

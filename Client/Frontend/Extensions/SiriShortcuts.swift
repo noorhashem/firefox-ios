@@ -1,13 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Intents
 import IntentsUI
 import Shared
 
-@available(iOS 12.0, *)
 class SiriShortcuts {
     enum activityType: String {
         case openURL = "org.mozilla.ios.Firefox.newTab"
@@ -22,17 +21,15 @@ class SiriShortcuts {
 
     private var openUrlActivity: NSUserActivity? = {
         let activity = NSUserActivity(activityType: activityType.openURL.rawValue)
-        activity.title = Strings.SettingsSiriOpenURL
+        activity.title = .SettingsSiriOpenURL
         activity.isEligibleForPrediction = true
-        activity.suggestedInvocationPhrase = Strings.SettingsSiriOpenURL
+        activity.suggestedInvocationPhrase = .SettingsSiriOpenURL
         activity.persistentIdentifier = NSUserActivityPersistentIdentifier(activityType.openURL.rawValue)
         return activity
     }()
 
     static func displayAddToSiri(for activityType: activityType, in viewController: UIViewController) {
-        guard let activity = SiriShortcuts().getActivity(for: activityType) else {
-            return
-        }
+        guard let activity = SiriShortcuts().getActivity(for: activityType) else { return }
         let shortcut = INShortcut(userActivity: activity)
         let addViewController = INUIAddVoiceShortcutViewController(shortcut: shortcut)
         addViewController.modalPresentationStyle = .formSheet

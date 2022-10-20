@@ -1,12 +1,12 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
 import WebKit
-import SwiftyJSON
 
+private let log = Logger.browserLogger
 let ReaderModeProfileKeyStyle = "readermode.style"
 
 enum ReaderModeMessageType: String {
@@ -36,7 +36,7 @@ enum ReaderModeTheme: String {
         // Get current Firefox theme (Dark vs Normal)
         // Normal means light theme. This is the overall theme used
         // by Firefox iOS app
-        let appWideTheme = ThemeManager.instance.currentName
+        let appWideTheme = LegacyThemeManager.instance.currentName
         // We check for 3 basic themes we have Light / Dark / Sepia
         // Theme: Dark - app-wide dark overrides all
         if appWideTheme == .dark {
@@ -62,11 +62,11 @@ enum ReaderModeFontType: String {
     case serifBold = "serif-bold"
     case sansSerif = "sans-serif"
     case sansSerifBold = "sans-serif-bold"
-    
+
     init(type: String) {
         let font = ReaderModeFontType(rawValue: type)
         let isBoldFontEnabled = UIAccessibility.isBoldTextEnabled
-        
+
         switch font {
         case .serif,
              .serifBold:
@@ -76,11 +76,11 @@ enum ReaderModeFontType: String {
             self = isBoldFontEnabled ? .sansSerifBold : .sansSerif
         case .none:
             self = .sansSerif
-        } 
+        }
     }
-    
-    func isSameFamily(_ font: ReaderModeFontType) -> Bool {        
-        return !FontFamily.families.filter { $0.contains(font) && $0.contains(self) }.isEmpty        
+
+    func isSameFamily(_ font: ReaderModeFontType) -> Bool {
+        return FontFamily.families.contains(where: { $0.contains(font) && $0.contains(self) })
     }
 }
 
@@ -152,7 +152,7 @@ struct ReaderModeStyle {
 
     /// Encode the style to a JSON dictionary that can be passed to ReaderMode.js
     func encode() -> String {
-        return JSON(["theme": theme.rawValue, "fontType": fontType.rawValue, "fontSize": fontSize.rawValue]).stringify() ?? ""
+        return encodeAsDictionary().asString ?? ""
     }
 
     /// Encode the style to a dictionary that can be stored in the profile
@@ -186,7 +186,7 @@ struct ReaderModeStyle {
         self.fontType = fontType
         self.fontSize = fontSize!
     }
-    
+
     mutating func ensurePreferredColorThemeIfNeeded() {
         self.theme = ReaderModeTheme.preferredTheme(for: self.theme)
     }
@@ -199,8 +199,10 @@ struct ReadabilityResult {
     var domain = ""
     var url = ""
     var content = ""
+    var textContent = ""
     var title = ""
     var credits = ""
+    var excerpt = ""
 
     init?(object: AnyObject?) {
         if let dict = object as? NSDictionary {
@@ -215,6 +217,12 @@ struct ReadabilityResult {
             if let content = dict["content"] as? String {
                 self.content = content
             }
+            if let textContent = dict["textContent"] as? String {
+                self.textContent = textContent
+            }
+            if let excerpt = dict["excerpt"] as? String {
+                self.excerpt = excerpt
+            }
             if let title = dict["title"] as? String {
                 self.title = title
             }
@@ -228,12 +236,16 @@ struct ReadabilityResult {
 
     /// Initialize from a JSON encoded string
     init?(string: String) {
-        let object = JSON(parseJSON: string)
-        let domain = object["domain"].string
-        let url = object["url"].string
-        let content = object["content"].string
-        let title = object["title"].string
-        let credits = object["credits"].string
+        guard let data = string.data(using: .utf8),
+              let object = try? JSONSerialization.jsonObject(with: data, options: .fragmentsAllowed) as? [String: String] else { return nil }
+
+        let domain = object["domain"]
+        let url = object["url"]
+        let content = object["content"]
+        let textContent = object["textContent"]
+        let excerpt = object["excerpt"]
+        let title = object["title"]
+        let credits = object["credits"]
 
         if domain == nil || url == nil || content == nil || title == nil || credits == nil {
             return nil
@@ -244,22 +256,24 @@ struct ReadabilityResult {
         self.content = content!
         self.title = title!
         self.credits = credits!
+        self.textContent = textContent ?? ""
+        self.excerpt = excerpt ?? ""
     }
 
     /// Encode to a dictionary, which can then for example be json encoded
     func encode() -> [String: Any] {
-        return ["domain": domain, "url": url, "content": content, "title": title, "credits": credits]
+        return ["domain": domain, "url": url, "content": content, "title": title, "credits": credits, "textContent": textContent, "excerpt": excerpt]
     }
 
     /// Encode to a JSON encoded string
     func encode() -> String {
         let dict: [String: Any] = self.encode()
-        return JSON(dict).stringify()!
+        return dict.asString!
     }
 }
 
 /// Delegate that contains callbacks that we have added on top of the built-in WKWebViewDelegate
-protocol ReaderModeDelegate {
+protocol ReaderModeDelegate: AnyObject {
     func readerMode(_ readerMode: ReaderMode, didChangeReaderModeState state: ReaderModeState, forTab tab: Tab)
     func readerMode(_ readerMode: ReaderMode, didDisplayReaderizedContentForTab tab: Tab)
     func readerMode(_ readerMode: ReaderMode, didParseReadabilityResult readabilityResult: ReadabilityResult, forTab tab: Tab)
@@ -268,7 +282,7 @@ protocol ReaderModeDelegate {
 let ReaderModeNamespace = "window.__firefox__.reader"
 
 class ReaderMode: TabContentScript {
-    var delegate: ReaderModeDelegate?
+    weak var delegate: ReaderModeDelegate?
 
     fileprivate weak var tab: Tab?
     var state = ReaderModeState.unavailable
@@ -297,22 +311,23 @@ class ReaderMode: TabContentScript {
 
     fileprivate func handleReaderModeStateChange(_ state: ReaderModeState) {
         self.state = state
-        guard let tab = tab else {
-            return
-        }
+        guard let tab = tab else { return }
         delegate?.readerMode(self, didChangeReaderModeState: state, forTab: tab)
     }
 
     fileprivate func handleReaderContentParsed(_ readabilityResult: ReadabilityResult) {
-        guard let tab = tab else {
-            return
-        }
+        guard let tab = tab else { return }
+        log.info("ReaderMode: Readability result available!")
+        tab.readabilityResult = readabilityResult
         delegate?.readerMode(self, didParseReadabilityResult: readabilityResult, forTab: tab)
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceiveScriptMessage message: WKScriptMessage) {
-        guard let msg = message.body as? [String: Any], let type = msg["Type"] as? String, let messageType = ReaderModeMessageType(rawValue: type) else { return }
-        
+        guard let msg = message.body as? [String: Any],
+              let type = msg["Type"] as? String,
+              let messageType = ReaderModeMessageType(rawValue: type)
+        else { return }
+
         switch messageType {
             case .pageEvent:
                 if let readerPageEvent = ReaderPageEvent(rawValue: msg["Value"] as? String ?? "Invalid") {
@@ -332,9 +347,9 @@ class ReaderMode: TabContentScript {
     var style: ReaderModeStyle = DefaultReaderModeStyle {
         didSet {
             if state == ReaderModeState.active {
-                tab?.webView?.evaluateJavaScript("\(ReaderModeNamespace).setStyle(\(style.encode()))", completionHandler: { (object, error) -> Void in
+                tab?.webView?.evaluateJavascriptInDefaultContentWorld("\(ReaderModeNamespace).setStyle(\(style.encode()))") { object, error in
                     return
-                })
+                }
             }
         }
     }

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Account
@@ -37,7 +37,7 @@ open class EngineConfiguration: Equatable {
     }
 }
 
-public func ==(lhs: EngineConfiguration, rhs: EngineConfiguration) -> Bool {
+public func == (lhs: EngineConfiguration, rhs: EngineConfiguration) -> Bool {
     return Set(lhs.enabled) == Set(rhs.enabled)
 }
 
@@ -75,7 +75,7 @@ public struct EngineMeta: Equatable {
     }
 }
 
-public func ==(lhs: EngineMeta, rhs: EngineMeta) -> Bool {
+public func == (lhs: EngineMeta, rhs: EngineMeta) -> Bool {
     return (lhs.version == rhs.version) && (lhs.syncID == rhs.syncID)
 }
 
@@ -128,7 +128,7 @@ public struct MetaGlobal: Equatable {
     }
 }
 
-public func ==(lhs: MetaGlobal, rhs: MetaGlobal) -> Bool {
+public func == (lhs: MetaGlobal, rhs: MetaGlobal) -> Bool {
     return (lhs.syncID == rhs.syncID) &&
            (lhs.storageVersion == rhs.storageVersion) &&
            optArrayEqual(lhs.declined, rhs: rhs.declined) &&

@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import Shared
@@ -8,9 +8,10 @@ import XCGLogger
 import SwiftyJSON
 import MozillaAppServices
 
-
 public let FxAClientErrorDomain = "org.mozilla.fxa.error"
-public let FxAClientUnknownError = NSError(domain: FxAClientErrorDomain, code: 999,
+public let FxAClientUnknownError = NSError(
+    domain: FxAClientErrorDomain,
+    code: 999,
     userInfo: [NSLocalizedDescriptionKey: "Invalid server response"])
 
 public struct FxAccountRemoteError {
@@ -29,7 +30,7 @@ public enum FxAClientError: Error, CustomStringConvertible {
     case remote(RemoteError)
     case local(NSError)
 
-    public var description : String {
+    public var description: String {
         switch self {
         case .remote(let err): return "FxA remote error: \(err)"
         case .local(let err): return "FxA local error: \(err)"
@@ -59,7 +60,6 @@ public struct RemoteError {
         return errno == FxAccountRemoteError.AttemptToOperateOnAnUnverifiedAccount
     }
 }
-
 
 private let CurrentSyncAuthStateCacheVersion = 1
 
@@ -142,7 +142,7 @@ open class FirefoxAccountSyncAuthState: SyncAuthState {
         let deferred = Deferred<Maybe<(token: TokenServerToken, forKey: Data)>>()
 
         RustFirefoxAccounts.shared.accountManager.uponQueue(.main) { accountManager in
-            accountManager.getTokenServerEndpointURL() { result in
+            accountManager.getTokenServerEndpointURL { result in
                 guard case .success(let tokenServerEndpointURL) = result else {
                     deferred.fill(Maybe(failure: FxAClientError.local(NSError())))
                     return
@@ -161,7 +161,7 @@ open class FirefoxAccountSyncAuthState: SyncAuthState {
                                 return
                             }
                             let kSync = accessToken.key!.k.base64urlSafeDecodedData!
-                            let newCache = SyncAuthStateCache(token: token, forKey: kSync,expiresAt: now + 1000 * token.durationInSeconds)
+                            let newCache = SyncAuthStateCache(token: token, forKey: kSync, expiresAt: now + 1000 * token.durationInSeconds)
                             log.debug("Fetched token server token!  Token expires at \(newCache.expiresAt).")
                             self.cache.value = newCache
                             deferred.fill(Maybe(success: (token: token, forKey: kSync)))

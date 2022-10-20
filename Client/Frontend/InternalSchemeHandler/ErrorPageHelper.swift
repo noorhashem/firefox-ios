@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import WebKit
@@ -8,14 +8,14 @@ import GCDWebServers
 import Shared
 import Storage
 
-fileprivate let MozDomain = "mozilla"
-fileprivate let MozErrorDownloadsNotEnabled = 100
-fileprivate let MessageOpenInSafari = "openInSafari"
-fileprivate let MessageCertVisitOnce = "certVisitOnce"
+private let MozDomain = "mozilla"
+private let MozErrorDownloadsNotEnabled = 100
+private let MessageOpenInSafari = "openInSafari"
+private let MessageCertVisitOnce = "certVisitOnce"
 
 // Regardless of cause, NSURLErrorServerCertificateUntrusted is currently returned in all cases.
 // Check the other cases in case this gets fixed in the future.
-fileprivate let CertErrors = [
+private let CertErrors = [
     NSURLErrorServerCertificateUntrusted,
     NSURLErrorServerCertificateHasBadDate,
     NSURLErrorServerCertificateHasUnknownRoot,
@@ -24,13 +24,13 @@ fileprivate let CertErrors = [
 
 // Error codes copied from Gecko. The ints corresponding to these codes were determined
 // by inspecting the NSError in each of these cases.
-fileprivate let CertErrorCodes = [
+private let CertErrorCodes = [
     -9813: "SEC_ERROR_UNKNOWN_ISSUER",
     -9814: "SEC_ERROR_EXPIRED_CERTIFICATE",
     -9843: "SSL_ERROR_BAD_CERT_DOMAIN",
 ]
 
-fileprivate func certFromErrorURL(_ url: URL) -> SecCertificate? {
+private func certFromErrorURL(_ url: URL) -> SecCertificate? {
     func getCert(_ url: URL) -> SecCertificate? {
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         if let encodedCert = components?.queryItems?.filter({ $0.name == "badcert" }).first?.value,
@@ -54,7 +54,7 @@ fileprivate func certFromErrorURL(_ url: URL) -> SecCertificate? {
     return nil
 }
 
-fileprivate func cfErrorToName(_ err: CFNetworkErrors) -> String {
+private func cfErrorToName(_ err: CFNetworkErrors) -> String {
     switch err {
     case .cfHostErrorHostNotFound: return "CFHostErrorHostNotFound"
     case .cfHostErrorUnknown: return "CFHostErrorUnknown"
@@ -148,17 +148,15 @@ class ErrorPageHandler: InternalSchemeResponse {
     static let path = InternalURL.Path.errorpage.rawValue
 
     func response(forRequest request: URLRequest) -> (URLResponse, Data)? {
-        guard let requestUrl = request.url, let originalUrl = InternalURL(requestUrl)?.originalURLFromErrorPage else {
-            return nil
-        }
+        guard let requestUrl = request.url, let originalUrl = InternalURL(requestUrl)?.originalURLFromErrorPage else { return nil }
 
         guard let url = request.url,
-            let c = URLComponents(url: url, resolvingAgainstBaseURL: false),
-            let code = c.valueForQuery("code"),
+            let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+            let code = components.valueForQuery("code"),
             let errCode = Int(code),
-            let errDescription = c.valueForQuery("description"),
+            let errDescription = components.valueForQuery("description"),
             let errURLDomain = originalUrl.host,
-            var errDomain = c.valueForQuery("domain") else {
+            var errDomain = components.valueForQuery("domain") else {
                 return nil
         }
 
@@ -169,7 +167,7 @@ class ErrorPageHandler: InternalSchemeResponse {
             "short_description": errDomain,
             ]
 
-        let tryAgain = NSLocalizedString("Try again", tableName: "ErrorPages", comment: "Shown in error pages on a button that will try to load the page again")
+        let tryAgain: String = .ErrorPageTryAgain
         var actions = "<script>function reloader() { location.replace((new URL(location.href)).searchParams.get(\"url\")); }" +
                     "</script><button onclick='reloader()'>\(tryAgain)</button>"
 
@@ -179,29 +177,32 @@ class ErrorPageHandler: InternalSchemeResponse {
             }
         } else if errDomain == MozDomain {
             if errCode == MozErrorDownloadsNotEnabled {
-                let downloadInSafari = NSLocalizedString("Open in Safari", tableName: "ErrorPages", comment: "Shown in error pages for files that can't be shown and need to be downloaded.")
+                let downloadInSafari: String = .ErrorPageOpenInSafari
 
                 // Overwrite the normal try-again action.
                 actions = "<button onclick='webkit.messageHandlers.errorPageHelperMessageManager.postMessage({type: \"\(MessageOpenInSafari)\"})'>\(downloadInSafari)</button>"
             }
             errDomain = ""
         } else if CertErrors.contains(errCode) {
-            guard let url = request.url, let comp = URLComponents(url: url, resolvingAgainstBaseURL: false), let certError = comp.valueForQuery("certerror") else {
+            guard let url = request.url,
+                  let comp = URLComponents(url: url, resolvingAgainstBaseURL: false),
+                  let certError = comp.valueForQuery("certerror")
+            else {
                 assert(false)
                 return nil
             }
 
             asset = Bundle.main.path(forResource: "CertError", ofType: "html")
-            actions = "<button onclick='history.back()'>\(Strings.ErrorPagesGoBackButton)</button>"
-            variables["error_title"] = Strings.ErrorPagesCertWarningTitle
+            actions = "<button onclick='history.back()'>\(String.ErrorPagesGoBackButton)</button>"
+            variables["error_title"] = .ErrorPagesCertWarningTitle
             variables["cert_error"] = certError
-            variables["long_description"] = String(format: Strings.ErrorPagesCertWarningDescription, "<b>\(errURLDomain)</b>")
-            variables["advanced_button"] = Strings.ErrorPagesAdvancedButton
-            variables["warning_description"] = Strings.ErrorPagesCertWarningDescription
-            variables["warning_advanced1"] = Strings.ErrorPagesAdvancedWarning1
-            variables["warning_advanced2"] = Strings.ErrorPagesAdvancedWarning2
+            variables["long_description"] = String(format: .ErrorPagesCertWarningDescription, "<b>\(errURLDomain)</b>")
+            variables["advanced_button"] = .ErrorPagesAdvancedButton
+            variables["warning_description"] = .ErrorPagesCertWarningDescription
+            variables["warning_advanced1"] = .ErrorPagesAdvancedWarning1
+            variables["warning_advanced2"] = .ErrorPagesAdvancedWarning2
             variables["warning_actions"] =
-            "<p><a href='javascript:webkit.messageHandlers.errorPageHelperMessageManager.postMessage({type: \"\(MessageCertVisitOnce)\"})'>\(Strings.ErrorPagesVisitOnceButton)</button></p>"
+                "<p><a id='\(UserScriptManager.appIdToken)__firefox__visitOnce' href='#'>\(String.ErrorPagesVisitOnceButton)</button></p>"
         }
 
         variables["actions"] = actions
@@ -230,9 +231,7 @@ class ErrorPageHelper {
     }
 
     func loadPage(_ error: NSError, forUrl url: URL, inWebView webView: WKWebView) {
-        guard var components = URLComponents(string: "\(InternalURL.baseUrl)/\(ErrorPageHandler.path)"), let webViewUrl = webView.url else {
-            return
-        }
+        guard var components = URLComponents(string: "\(InternalURL.baseUrl)/\(ErrorPageHandler.path)"), let webViewUrl = webView.url else { return }
 
         // Page has failed to load again, just return and keep showing the existing error page.
         if let internalUrl = InternalURL(webViewUrl), internalUrl.originalURLFromErrorPage == url {
@@ -270,7 +269,10 @@ class ErrorPageHelper {
                 // A session restore page is already on the history stack, so don't load another page on the history stack.
                 webView.replaceLocation(with: page)
             } else {
-                // A new page needs to be added to the history stack (i.e. the simple case of trying to navigate to an url for the first time and it fails, without pushing a page on the history stack, the webview will just show the current page).
+                // A new page needs to be added to the history stack (i.e. the simple case
+                // of trying to navigate to an url for the first time and it fails, without
+                // pushing a page on the history stack, the webview will just show the
+                // current page).
                 webView.load(PrivilegedRequest(url: urlWithQuery) as URLRequest)
             }
         }
@@ -310,4 +312,3 @@ extension ErrorPageHelper: TabContentScript {
         }
     }
 }
-

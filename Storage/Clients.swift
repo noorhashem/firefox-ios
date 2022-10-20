@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Shared
 import SwiftyJSON
@@ -57,7 +57,7 @@ public struct RemoteClient: Equatable {
 }
 
 // TODO: should this really compare tabs?
-public func ==(lhs: RemoteClient, rhs: RemoteClient) -> Bool {
+public func == (lhs: RemoteClient, rhs: RemoteClient) -> Bool {
     return lhs.guid == rhs.guid &&
         lhs.name == rhs.name &&
         lhs.modified == rhs.modified &&
@@ -70,6 +70,10 @@ public func ==(lhs: RemoteClient, rhs: RemoteClient) -> Bool {
 
 extension RemoteClient: CustomStringConvertible {
     public var description: String {
-        return "<RemoteClient GUID: \(guid ?? "nil"), name: \(name), modified: \(modified), type: \(type ?? "nil"), formfactor: \(formfactor ?? "nil"), OS: \(os ?? "nil"), version: \(version ?? "nil"), fxaDeviceId: \(fxaDeviceId ?? "nil")>"
+        return """
+<RemoteClient GUID: \(guid ?? "nil"), name: \(name), modified: \(modified), \
+type: \(type ?? "nil"), formfactor: \(formfactor ?? "nil"), OS: \(os ?? "nil"), \
+version: \(version ?? "nil"), fxaDeviceId: \(fxaDeviceId ?? "nil")>
+"""
     }
 }

@@ -5,7 +5,6 @@
 Resolve secrets and dummy secrets
 """
 
-from __future__ import absolute_import, print_function, unicode_literals
 
 from taskgraph.transforms.base import TransformSequence
 
@@ -56,14 +55,14 @@ def set_worker_config(config, tasks):
         artifacts.append({
             "type": "file",
             "name": "public/logs/bitrise.log",
-            "path": "{}/bitrise.log".format(_ARTIFACTS_DIRECTORY),
+            "path": f"{_ARTIFACTS_DIRECTORY}/bitrise.log",
         })
 
         for locale in task["attributes"]["chunk_locales"]:
             artifacts.append({
                 "type": "file",
-                "name": "public/screenshots/{}.zip".format(locale),
-                "path": "{}/{}.zip".format(_ARTIFACTS_DIRECTORY, locale),
+                "name": f"public/screenshots/{locale}.zip",
+                "path": f"{_ARTIFACTS_DIRECTORY}/{locale}.zip",
             })
 
         worker.setdefault("docker-image", {"in-tree": "screenshots"})
@@ -91,7 +90,7 @@ def add_bitrise_command(config, tasks):
         ]
 
         for locale in task["attributes"]["chunk_locales"]:
-            command.extend(["--locale", locale])
+            command.extend(["--importLocales", locale])
 
         derived_data_path = task.pop("build-derived-data-path", "")
         if derived_data_path:
@@ -101,22 +100,22 @@ def add_bitrise_command(config, tasks):
 
         yield task
 
+# Commented functuion due to issue #7248 causing less screenshots taken
+# @transforms.add
+# def add_screenshot_checks_command(config, tasks):
+#    for task in tasks:
+#        commands = task["run"]["commands"]
 
-@transforms.add
-def add_screenshot_checks_command(config, tasks):
-    for task in tasks:
-        commands = task["run"]["commands"]
+#        command = [
+#            "python3",
+#            "taskcluster/scripts/check-screenshots.py",
+#            "--artifacts-directory", _ARTIFACTS_DIRECTORY,
+#            "--screenshots-configuration", "l10n-screenshots-config.yml",
+#        ]
 
-        command = [
-            "python3",
-            "taskcluster/scripts/check-screenshots.py",
-            "--artifacts-directory", _ARTIFACTS_DIRECTORY,
-            "--screenshots-configuration", "l10n-screenshots-config.yml",
-        ]
+#        for locale in task["attributes"]["chunk_locales"]:
+#            command.extend(["--importLocales", locale])
 
-        for locale in task["attributes"]["chunk_locales"]:
-            command.extend(["--locale", locale])
+#        commands.append(command)
 
-        commands.append(command)
-
-        yield task
+#        yield task

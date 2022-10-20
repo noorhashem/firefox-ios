@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 
@@ -60,7 +60,7 @@ class SwipeAnimator: NSObject {
     }
 }
 
-//MARK: Private Helpers
+// MARK: Private Helpers
 extension SwipeAnimator {
     fileprivate func animateBackToCenter() {
         UIView.animate(withDuration: params.recenterAnimationDuration, animations: {
@@ -70,9 +70,7 @@ extension SwipeAnimator {
     }
 
     fileprivate func animateAwayWithVelocity(_ velocity: CGPoint, speed: CGFloat) {
-        guard let animatingView = self.animatingView else {
-            return
-        }
+        guard let animatingView = self.animatingView else { return }
 
         if !(delegate?.swipeAnimatorIsAnimateAwayEnabled(self) ?? false) {
             animateBackToCenter()
@@ -83,14 +81,16 @@ extension SwipeAnimator {
         let translation = velocity.x >= 0 ? animatingView.frame.width : -animatingView.frame.width
         let timeStep = TimeInterval(abs(translation) / speed)
         self.delegate?.swipeAnimator(self, viewWillExitContainerBounds: animatingView)
-        UIView.animate(withDuration: timeStep, animations: {
-            animatingView.transform = self.transformForTranslation(translation)
-            animatingView.alpha = self.alphaForDistanceFromCenter(abs(translation))
-        }, completion: { finished in
-            if finished {
-                animatingView.alpha = 0
-            }
-        })
+        UIView.animate(
+            withDuration: timeStep,
+            animations: {
+                animatingView.transform = self.transformForTranslation(translation)
+                animatingView.alpha = self.alphaForDistanceFromCenter(abs(translation))
+            }, completion: { finished in
+                if finished {
+                    animatingView.alpha = 0
+                }
+            })
     }
 
     fileprivate func transformForTranslation(_ translation: CGFloat) -> CGAffineTransform {
@@ -113,7 +113,7 @@ extension SwipeAnimator {
     }
 }
 
-//MARK: Selectors
+// MARK: Selectors
 extension SwipeAnimator {
     @objc func didPan(_ recognizer: UIPanGestureRecognizer!) {
         let translation = recognizer.translation(in: animatingView)

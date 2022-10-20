@@ -1,11 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
 import WebKit
 import Shared
-import Photos
+import UIKit
 
 private let log = Logger.browserLogger
 
@@ -15,9 +15,17 @@ private let schemesAllowedToBeOpenedAsPopups = ["http", "https", "javascript", "
 extension BrowserViewController: WKUIDelegate {
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         guard let parentTab = tabManager[webView] else { return nil }
-
-        guard !navigationAction.isInternalUnprivileged, shouldRequestBeOpenedAsPopup(navigationAction.request) else {
+        guard !navigationAction.isInternalUnprivileged,
+              shouldRequestBeOpenedAsPopup(navigationAction.request)
+        else {
             print("Denying popup from request: \(navigationAction.request)")
+
+            guard let url = navigationAction.request.url else { return nil }
+
+            if url.scheme == "whatsapp" && UIApplication.shared.canOpenURL(url) {
+                UIApplication.shared.open(url, options: [:])
+            }
+
             return nil
         }
 
@@ -25,16 +33,12 @@ extension BrowserViewController: WKUIDelegate {
             screenshotHelper.takeScreenshot(currentTab)
         }
 
-        guard let bvc = parentTab.browserViewController else { return nil }
-
         // If the page uses `window.open()` or `[target="_blank"]`, open the page in a new tab.
         // IMPORTANT!!: WebKit will perform the `URLRequest` automatically!! Attempting to do
         // the request here manually leads to incorrect results!!
-        let newTab = tabManager.addPopupForParentTab(bvc: bvc, parentTab: parentTab, configuration: configuration)
+        let newTab = tabManager.addPopupForParentTab(profile: profile, parentTab: parentTab, configuration: configuration)
 
-        if navigationAction.request.url == nil {
-            newTab.url = URL(string: "about:blank")
-        }
+        newTab.url = URL(string: "about:blank")
 
         return newTab.webView
     }
@@ -70,7 +74,12 @@ extension BrowserViewController: WKUIDelegate {
         }
     }
 
-    func webView(_ webView: WKWebView, runJavaScriptConfirmPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (Bool) -> Void) {
+    func webView(
+        _ webView: WKWebView,
+        runJavaScriptConfirmPanelWithMessage message: String,
+        initiatedByFrame frame: WKFrameInfo,
+        completionHandler: @escaping (Bool) -> Void
+    ) {
         let confirmAlert = ConfirmPanelAlert(message: message, frame: frame, completionHandler: completionHandler)
         if shouldDisplayJSAlertForWebView(webView) {
             present(confirmAlert.alertController(), animated: true, completion: nil)
@@ -81,7 +90,13 @@ extension BrowserViewController: WKUIDelegate {
         }
     }
 
-    func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
+    func webView(
+        _ webView: WKWebView,
+        runJavaScriptTextInputPanelWithPrompt prompt: String,
+        defaultText: String?,
+        initiatedByFrame frame: WKFrameInfo,
+        completionHandler: @escaping (String?) -> Void
+    ) {
         let textInputAlert = TextInputAlert(message: prompt, frame: frame, completionHandler: completionHandler, defaultText: defaultText)
         if shouldDisplayJSAlertForWebView(webView) {
             present(textInputAlert.alertController(), animated: true, completion: nil)
@@ -96,183 +111,250 @@ extension BrowserViewController: WKUIDelegate {
         if let tab = tabManager[webView] {
             // Need to wait here in case we're waiting for a pending `window.open()`.
             DispatchQueue.main.asyncAfter(deadline: .now() + .milliseconds(100)) {
-                self.tabManager.removeTabAndUpdateSelectedIndex(tab)
+                self.tabManager.removeTab(tab)
             }
         }
     }
 
-    @available(iOS 13.0, *)
     func webView(_ webView: WKWebView, contextMenuConfigurationForElement elementInfo: WKContextMenuElementInfo, completionHandler: @escaping (UIContextMenuConfiguration?) -> Void) {
-        completionHandler(UIContextMenuConfiguration(identifier: nil, previewProvider: {
-            guard let url = elementInfo.linkURL, self.profile.prefs.boolForKey(PrefsKeys.ContextMenuShowLinkPreviews) ?? true else { return nil }
-            let previewViewController = UIViewController()
-            previewViewController.view.isUserInteractionEnabled = false
-            let clonedWebView = WKWebView(frame: webView.frame, configuration: webView.configuration)
+        completionHandler(UIContextMenuConfiguration(
+            identifier: nil,
+            previewProvider: {
+                guard let url = elementInfo.linkURL,
+                      self.profile.prefs.boolForKey(PrefsKeys.ContextMenuShowLinkPreviews) ?? true
+                else { return nil }
 
-            previewViewController.view.addSubview(clonedWebView)
-            clonedWebView.snp.makeConstraints { make in
-                make.edges.equalTo(previewViewController.view)
-            }
+                let previewViewController = UIViewController()
+                previewViewController.view.isUserInteractionEnabled = false
+                let clonedWebView = WKWebView(frame: webView.frame, configuration: webView.configuration)
 
-            clonedWebView.load(URLRequest(url: url))
-
-            return previewViewController
-        }, actionProvider: { (suggested) -> UIMenu? in
-            guard let url = elementInfo.linkURL, let currentTab = self.tabManager.selectedTab,
-                let contextHelper = currentTab.getContentScript(name: ContextMenuHelper.name()) as? ContextMenuHelper,
-                let elements = contextHelper.elements else { return nil }
-            let isPrivate = currentTab.isPrivate
-            let addTab = { (rURL: URL, isPrivate: Bool) in
-                let tab = self.tabManager.addTab(URLRequest(url: rURL as URL), afterTab: currentTab, isPrivate: isPrivate)
-                LeanPlumClient.shared.track(event: .openedNewTab, withParameters: ["Source": "Long Press Context Menu"])
-                guard !self.topTabsVisible else {
-                    return
+                previewViewController.view.addSubview(clonedWebView)
+                clonedWebView.snp.makeConstraints { make in
+                    make.edges.equalTo(previewViewController.view)
                 }
-                var toastLabelText: String
-                
-                if isPrivate {
-                    toastLabelText = Strings.ContextMenuButtonToastNewPrivateTabOpenedLabelText
-                } else {
-                    toastLabelText = Strings.ContextMenuButtonToastNewTabOpenedLabelText
+
+                clonedWebView.load(URLRequest(url: url))
+
+                return previewViewController
+            }, actionProvider: { [self] (suggested) -> UIMenu? in
+                guard let url = elementInfo.linkURL,
+                      let currentTab = self.tabManager.selectedTab,
+                      let contextHelper = currentTab.getContentScript(name: ContextMenuHelper.name()) as? ContextMenuHelper,
+                      let elements = contextHelper.elements
+                else { return nil }
+
+                let isPrivate = currentTab.isPrivate
+                var setAddTabAdSearchParam = false
+                let addTab = { (rURL: URL, isPrivate: Bool) in
+                    let adUrl = rURL.absoluteString
+                    if currentTab == self.tabManager.selectedTab,
+                       !currentTab.adsTelemetryUrlList.isEmpty,
+                       currentTab.adsTelemetryUrlList.contains(adUrl),
+                       !currentTab.adsProviderName.isEmpty {
+
+                        AdsTelemetryHelper.trackAdsClickedOnPage(providerName: currentTab.adsProviderName)
+                        currentTab.adsTelemetryUrlList.removeAll()
+                        currentTab.adsTelemetryRedirectUrlList.removeAll()
+                        currentTab.adsProviderName = ""
+
+                        // Set the tab search param from current tab considering we need the values in order to cope with ad redirects
+                    } else if !currentTab.adsProviderName.isEmpty {
+                        setAddTabAdSearchParam = true
+                    }
+
+                    let tab = self.tabManager.addTab(URLRequest(url: rURL as URL), afterTab: currentTab, isPrivate: isPrivate)
+
+                    if setAddTabAdSearchParam {
+                        tab.adsProviderName = currentTab.adsProviderName
+                        tab.adsTelemetryUrlList = currentTab.adsTelemetryUrlList
+                        tab.adsTelemetryRedirectUrlList = currentTab.adsTelemetryRedirectUrlList
+                    }
+
+                    // Record Observation for Search Term Groups
+                    let searchTerm = currentTab.metadataManager?.tabGroupData.tabAssociatedSearchTerm ?? ""
+                    let searchUrl = currentTab.metadataManager?.tabGroupData.tabAssociatedSearchUrl ?? ""
+                    if !searchTerm.isEmpty, !searchUrl.isEmpty {
+                        let searchData = TabGroupData(searchTerm: searchTerm,
+                                                      searchUrl: searchUrl,
+                                                      nextReferralUrl: tab.url?.absoluteString ?? "")
+                        tab.metadataManager?.updateTimerAndObserving(state: .openInNewTab, searchData: searchData, isPrivate: tab.isPrivate)
+                    }
+
+                    guard !self.topTabsVisible else { return }
+                    var toastLabelText: String
+
+                    if isPrivate {
+                        toastLabelText = .ContextMenuButtonToastNewPrivateTabOpenedLabelText
+                    } else {
+                        toastLabelText = .ContextMenuButtonToastNewTabOpenedLabelText
+                    }
+                    // We're not showing the top tabs; show a toast to quick switch to the fresh new tab.
+                    let toast = ButtonToast(labelText: toastLabelText, buttonText: .ContextMenuButtonToastNewTabOpenedButtonText, completion: { buttonPressed in
+                        if buttonPressed {
+                            self.tabManager.selectTab(tab)
+                        }
+                    })
+                    self.show(toast: toast)
                 }
-                // We're not showing the top tabs; show a toast to quick switch to the fresh new tab.
-                let toast = ButtonToast(labelText: toastLabelText, buttonText: Strings.ContextMenuButtonToastNewTabOpenedButtonText, completion: { buttonPressed in
-                    if buttonPressed {
-                        self.tabManager.selectTab(tab)
+
+                let getImageData = { (_ url: URL, success: @escaping (Data) -> Void) in
+                    makeURLSession(
+                        userAgent: UserAgent.fxaUserAgent,
+                        configuration: URLSessionConfiguration.default).dataTask(with: url) { (data, response, error) in
+                            if let _ = validatedHTTPResponse(response, statusCode: 200..<300), let data = data {
+                                success(data)
+                            }
+                        }.resume()
+                }
+
+                var actions = [UIAction]()
+
+                if !isPrivate {
+                    actions.append(
+                        UIAction(
+                            title: .ContextMenuOpenInNewTab,
+                            image: UIImage.templateImageNamed("menu-NewTab"),
+                            identifier: UIAction.Identifier(rawValue: "linkContextMenu.openInNewTab")
+                        ) { _ in
+                            addTab(url, false)
+                        })
+                }
+
+                actions.append(
+                    UIAction(
+                        title: .ContextMenuOpenInNewPrivateTab,
+                        image: UIImage.templateImageNamed("menu-NewPrivateTab"),
+                        identifier: UIAction.Identifier("linkContextMenu.openInNewPrivateTab")
+                    ) { _ in
+                        addTab(url, true)
+                    })
+
+                let addBookmarkAction = UIAction(
+                    title: .ContextMenuBookmarkLink,
+                    image: UIImage.templateImageNamed(ImageIdentifiers.addToBookmark),
+                    identifier: UIAction.Identifier("linkContextMenu.bookmarkLink")
+                ) { _ in
+                    self.addBookmark(url: url.absoluteString, title: elements.title)
+                    TelemetryWrapper.recordEvent(category: .action,
+                                                 method: .add,
+                                                 object: .bookmark,
+                                                 value: .contextMenu)
+                }
+
+                let removeAction = UIAction(
+                    title: .RemoveBookmarkContextMenuTitle,
+                    image: UIImage.templateImageNamed(ImageIdentifiers.actionRemoveBookmark),
+                    identifier: UIAction.Identifier("linkContextMenu.removeBookmarkLink")
+                ) { _ in
+                    self.removeBookmark(url: url.absoluteString)
+                    TelemetryWrapper.recordEvent(category: .action,
+                                                 method: .delete,
+                                                 object: .bookmark,
+                                                 value: .contextMenu)
+                }
+
+                let isBookmarkedSite = profile.places.isBookmarked(url: url.absoluteString).value.successValue ?? false
+                actions.append(isBookmarkedSite ? removeAction : addBookmarkAction)
+
+                actions.append(UIAction(title: .ContextMenuDownloadLink, image: UIImage.templateImageNamed(ImageIdentifiers.downloads), identifier: UIAction.Identifier("linkContextMenu.download")) { _ in
+                    // This checks if download is a blob, if yes, begin blob download process
+                    if !DownloadContentScript.requestBlobDownload(url: url, tab: currentTab) {
+                        // if not a blob, set pendingDownloadWebView and load the request in
+                        // the webview, which will trigger the WKWebView navigationResponse
+                        // delegate function and eventually downloadHelper.open()
+                        self.pendingDownloadWebView = currentTab.webView
+                        let request = URLRequest(url: url)
+                        currentTab.webView?.load(request)
                     }
                 })
-                self.show(toast: toast)
-            }
 
-            let getImageData = { (_ url: URL, success: @escaping (Data) -> Void) in
-                makeURLSession(userAgent: UserAgent.fxaUserAgent, configuration: URLSessionConfiguration.default).dataTask(with: url) { (data, response, error) in
-                    if let _ = validatedHTTPResponse(response, statusCode: 200..<300), let data = data {
-                        success(data)
-                    }
-                }.resume()
-            }
-
-            var actions = [UIAction]()
-
-            if !isPrivate {
-                actions.append(UIAction(title: Strings.ContextMenuOpenInNewTab, image: UIImage.templateImageNamed("menu-NewTab"), identifier: UIAction.Identifier(rawValue: "linkContextMenu.openInNewTab")) {_ in
-                    addTab(url, false)
+                actions.append(UIAction(
+                    title: .ContextMenuCopyLink,
+                    image: UIImage.templateImageNamed(ImageIdentifiers.copyLink),
+                    identifier: UIAction.Identifier("linkContextMenu.copyLink")
+                ) { _ in
+                    UIPasteboard.general.url = url
                 })
-            }
 
-            actions.append(UIAction(title: Strings.ContextMenuOpenInNewPrivateTab, image: UIImage.templateImageNamed("menu-NewPrivateTab"), identifier: UIAction.Identifier("linkContextMenu.openInNewPrivateTab")) { _ in
-                addTab(url, true)
-            })
+                actions.append(UIAction(title: .ContextMenuShareLink, image: UIImage.templateImageNamed(ImageIdentifiers.share), identifier: UIAction.Identifier("linkContextMenu.share")) { _ in
+                    guard let tab = self.tabManager[webView],
+                          let helper = tab.getContentScript(name: ContextMenuHelper.name()) as? ContextMenuHelper
+                    else { return }
 
-            actions.append(UIAction(title: Strings.ContextMenuBookmarkLink, image: UIImage.templateImageNamed("menu-Bookmark"), identifier: UIAction.Identifier("linkContextMenu.bookmarkLink")) { _ in
-                self.addBookmark(url: url.absoluteString, title: elements.title)
-                SimpleToast().showAlertWithText(Strings.AppMenuAddBookmarkConfirmMessage, bottomContainer: self.webViewContainer)
-                TelemetryWrapper.recordEvent(category: .action, method: .add, object: .bookmark, value: .contextMenu)
-            })
+                    // This is only used on ipad for positioning the popover. On iPhone it is an action sheet.
+                    let point = webView.convert(helper.touchPoint, to: self.view)
+                    self.presentActivityViewController(url as URL, sourceView: self.view, sourceRect: CGRect(origin: point, size: CGSize(width: 10, height: 10)), arrowDirection: .unknown)
+                })
 
-            actions.append(UIAction(title: Strings.ContextMenuDownloadLink, image: UIImage.templateImageNamed("menu-panel-Downloads"), identifier: UIAction.Identifier("linkContextMenu.download")) {_ in
-                self.pendingDownloadWebView = currentTab.webView
-                DownloadContentScript.requestDownload(url: url, tab: currentTab)
-            })
-
-            actions.append(UIAction(title: Strings.ContextMenuCopyLink, image: UIImage.templateImageNamed("menu-Copy-Link"), identifier: UIAction.Identifier("linkContextMenu.copyLink")) { _ in
-                UIPasteboard.general.url = url
-            })
-
-            actions.append(UIAction(title: Strings.ContextMenuShareLink, image: UIImage.templateImageNamed("action_share"), identifier: UIAction.Identifier("linkContextMenu.share")) { _ in
-                guard let tab = self.tabManager[webView], let helper = tab.getContentScript(name: ContextMenuHelper.name()) as? ContextMenuHelper else { return }
-                // This is only used on ipad for positioning the popover. On iPhone it is an action sheet.
-                let p = webView.convert(helper.touchPoint, to: self.view)
-                self.presentActivityViewController(url as URL, sourceView: self.view, sourceRect: CGRect(origin: p, size: CGSize(width: 10, height: 10)), arrowDirection: .unknown)
-            })
-
-            if let url = elements.image {
-                let photoAuthorizeStatus = PHPhotoLibrary.authorizationStatus()
-                actions.append(UIAction(title: Strings.ContextMenuSaveImage, identifier: UIAction.Identifier("linkContextMenu.saveImage")) { _ in
-                    let handlePhotoLibraryAuthorized = {
-                        DispatchQueue.main.async {
-                            getImageData(url) { data in
-                                PHPhotoLibrary.shared().performChanges({
-                                    PHAssetCreationRequest.forAsset().addResource(with: .photo, data: data, options: nil)
-                                })
-                            }
+                if let url = elements.image {
+                    actions.append(UIAction(title: .ContextMenuSaveImage, identifier: UIAction.Identifier("linkContextMenu.saveImage")) { _ in
+                        getImageData(url) { data in
+                            guard let image = UIImage(data: data) else { return }
+                            self.writeToPhotoAlbum(image: image)
                         }
-                    }
+                    })
 
-                    let handlePhotoLibraryDenied = {
-                        DispatchQueue.main.async {
-                            let accessDenied = UIAlertController(title: Strings.PhotoLibraryFirefoxWouldLikeAccessTitle, message: Strings.PhotoLibraryFirefoxWouldLikeAccessMessage, preferredStyle: .alert)
-                            let dismissAction = UIAlertAction(title: Strings.CancelString, style: .default, handler: nil)
-                            accessDenied.addAction(dismissAction)
-                            let settingsAction = UIAlertAction(title: Strings.OpenSettingsString, style: .default ) { _ in
-                                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:])
-                            }
-                            accessDenied.addAction(settingsAction)
-                            self.present(accessDenied, animated: true, completion: nil)
-                        }
-                    }
+                    actions.append(UIAction(title: .ContextMenuCopyImage, identifier: UIAction.Identifier("linkContextMenu.copyImage")) { _ in
+                        // put the actual image on the clipboard
+                        // do this asynchronously just in case we're in a low bandwidth situation
+                        let pasteboard = UIPasteboard.general
+                        pasteboard.url = url as URL
+                        let changeCount = pasteboard.changeCount
+                        let application = UIApplication.shared
+                        var taskId: UIBackgroundTaskIdentifier = UIBackgroundTaskIdentifier(rawValue: 0)
+                        taskId = application.beginBackgroundTask(expirationHandler: {
+                            application.endBackgroundTask(taskId)
+                        })
 
-                    if photoAuthorizeStatus == .notDetermined {
-                        PHPhotoLibrary.requestAuthorization({ status in
-                            guard status == .authorized else {
-                                handlePhotoLibraryDenied()
+                        makeURLSession(userAgent: UserAgent.fxaUserAgent, configuration: URLSessionConfiguration.default).dataTask(with: url) { (data, response, error) in
+                            guard let _ = validatedHTTPResponse(response, statusCode: 200..<300) else {
+                                application.endBackgroundTask(taskId)
                                 return
                             }
 
-                            handlePhotoLibraryAuthorized()
-                        })
-                    } else if photoAuthorizeStatus == .authorized {
-                        handlePhotoLibraryAuthorized()
-                    } else {
-                        handlePhotoLibraryDenied()
-                    }
-                })
+                            // Only set the image onto the pasteboard if the pasteboard hasn't changed since
+                            // fetching the image; otherwise, in low-bandwidth situations,
+                            // we might be overwriting something that the user has subsequently added.
+                            if changeCount == pasteboard.changeCount, let imageData = data, error == nil {
+                                pasteboard.addImageWithData(imageData, forURL: url)
+                            }
 
-                actions.append(UIAction(title: Strings.ContextMenuCopyImage, identifier: UIAction.Identifier("linkContextMenu.copyImage")) { _ in
-                    // put the actual image on the clipboard
-                    // do this asynchronously just in case we're in a low bandwidth situation
-                    let pasteboard = UIPasteboard.general
-                    pasteboard.url = url as URL
-                    let changeCount = pasteboard.changeCount
-                    let application = UIApplication.shared
-                    var taskId: UIBackgroundTaskIdentifier = UIBackgroundTaskIdentifier(rawValue: 0)
-                    taskId = application.beginBackgroundTask (expirationHandler: {
-                        application.endBackgroundTask(taskId)
+                            application.endBackgroundTask(taskId)
+                        }.resume()
                     })
 
-                    makeURLSession(userAgent: UserAgent.fxaUserAgent, configuration: URLSessionConfiguration.default).dataTask(with: url) { (data, response, error) in
-                        guard let _ = validatedHTTPResponse(response, statusCode: 200..<300) else {
-                            application.endBackgroundTask(taskId)
-                            return
-                        }
+                    actions.append(UIAction(title: .ContextMenuCopyImageLink, identifier: UIAction.Identifier("linkContextMenu.copyImageLink")) { _ in
+                        UIPasteboard.general.url = url as URL
+                    })
+                }
 
-                        // Only set the image onto the pasteboard if the pasteboard hasn't changed since
-                        // fetching the image; otherwise, in low-bandwidth situations,
-                        // we might be overwriting something that the user has subsequently added.
-                        if changeCount == pasteboard.changeCount, let imageData = data, error == nil {
-                            pasteboard.addImageWithData(imageData, forURL: url)
-                        }
+                return UIMenu(title: url.absoluteString, children: actions)
+            }))
+    }
 
-                        application.endBackgroundTask(taskId)
-                    }.resume()
-                })
+    func writeToPhotoAlbum(image: UIImage) {
+        UIImageWriteToSavedPhotosAlbum(image, self, #selector(saveError), nil)
+    }
 
-                actions.append(UIAction(title: Strings.ContextMenuCopyImageLink, identifier: UIAction.Identifier("linkContextMenu.copyImageLink")) { _ in
-                    UIPasteboard.general.url = url as URL
-                })
+    @objc func saveError(_ image: UIImage, didFinishSavingWithError error: Error?, contextInfo: UnsafeRawPointer) {
+        guard error != nil else { return }
+        DispatchQueue.main.async {
+            let accessDenied = UIAlertController(title: .PhotoLibraryFirefoxWouldLikeAccessTitle, message: .PhotoLibraryFirefoxWouldLikeAccessMessage, preferredStyle: .alert)
+            let dismissAction = UIAlertAction(title: .CancelString, style: .default, handler: nil)
+            accessDenied.addAction(dismissAction)
+            let settingsAction = UIAlertAction(title: .OpenSettingsString, style: .default ) { _ in
+                UIApplication.shared.open(URL(string: UIApplication.openSettingsURLString)!, options: [:])
             }
-
-            return UIMenu(title: url.absoluteString, children: actions)
-        }))
+            accessDenied.addAction(settingsAction)
+            self.present(accessDenied, animated: true, completion: nil)
+        }
     }
 }
 
 extension WKNavigationAction {
     /// Allow local requests only if the request is privileged.
     var isInternalUnprivileged: Bool {
-        guard let url = request.url else {
-            return true
-        }
+        guard let url = request.url else { return true }
 
         if let url = InternalURL(url) {
             return !url.isAuthorized
@@ -283,6 +365,16 @@ extension WKNavigationAction {
 }
 
 extension BrowserViewController: WKNavigationDelegate {
+    func webView(_ webView: WKWebView, didReceiveServerRedirectForProvisionalNavigation navigation: WKNavigation!) {
+        guard let tab = tabManager[webView] else { return }
+
+        if !tab.adsTelemetryUrlList.isEmpty,
+           !tab.adsProviderName.isEmpty,
+           let webUrl = webView.url {
+            tab.adsTelemetryRedirectUrlList.append(webUrl)
+        }
+    }
+
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         if tabManager.selectedTab?.webView !== webView {
             return
@@ -295,10 +387,22 @@ extension BrowserViewController: WKNavigationDelegate {
         // (orange color) as soon as the page has loaded.
         if let url = webView.url {
             if !url.isReaderModeURL {
-                urlBar.updateReaderModeState(ReaderModeState.unavailable)
+                urlBar.updateReaderModeState(ReaderModeState.unavailable, hideReloadButton: shouldUseiPadSetup())
                 hideReaderModeBar(animated: false)
             }
         }
+    }
+
+    // Handle Universal link for Firefox wallpaper setting
+    private func isFirefoxUniversalWallpaperSetting(_ url: URL) -> Bool {
+        guard let scheme = url.scheme,
+              [URL.mozPublicScheme, URL.mozInternalScheme].contains(scheme)
+        else { return false }
+
+        let deeplinkUrl = "\(scheme)://deep-link?url=/settings/wallpaper"
+        if url.absoluteString == deeplinkUrl { return true }
+
+        return false
     }
 
     // Recognize an Apple Maps URL. This will trigger the native app. But only if a search query is present. Otherwise
@@ -326,13 +430,13 @@ extension BrowserViewController: WKNavigationDelegate {
     }
 
     // Use for sms and mailto links, which do not show a confirmation before opening.
-    fileprivate func showSnackbar(forExternalUrl url: URL, tab: Tab, completion: @escaping (Bool) -> ()) {
-        let snackBar = TimerSnackBar(text: Strings.ExternalLinkGenericConfirmation + "\n\(url.absoluteString)", img: nil)
-        let ok = SnackButton(title: Strings.OKString, accessibilityIdentifier: "AppOpenExternal.button.ok") { bar in
+    fileprivate func showSnackbar(forExternalUrl url: URL, tab: Tab, completion: @escaping (Bool) -> Void) {
+        let snackBar = TimerSnackBar(text: .ExternalLinkGenericConfirmation + "\n\(url.absoluteString)", img: nil)
+        let ok = SnackButton(title: .OKString, accessibilityIdentifier: "AppOpenExternal.button.ok") { bar in
             tab.removeSnackbar(bar)
             completion(true)
         }
-        let cancel = SnackButton(title: Strings.CancelString, accessibilityIdentifier: "AppOpenExternal.button.cancel") { bar in
+        let cancel = SnackButton(title: .CancelString, accessibilityIdentifier: "AppOpenExternal.button.cancel") { bar in
             tab.removeSnackbar(bar)
             completion(false)
         }
@@ -346,9 +450,24 @@ extension BrowserViewController: WKNavigationDelegate {
     // method.
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        guard let url = navigationAction.request.url, let tab = tabManager[webView] else {
+        guard let url = navigationAction.request.url,
+              let tab = tabManager[webView]
+        else {
             decisionHandler(.cancel)
             return
+        }
+
+        if tab == tabManager.selectedTab,
+           navigationAction.navigationType == .linkActivated,
+           !tab.adsTelemetryUrlList.isEmpty {
+
+            let adUrl = url.absoluteString
+            if tab.adsTelemetryUrlList.contains(adUrl) {
+                if !tab.adsProviderName.isEmpty { AdsTelemetryHelper.trackAdsClickedOnPage(providerName: tab.adsProviderName) }
+                tab.adsTelemetryUrlList.removeAll()
+                tab.adsTelemetryRedirectUrlList.removeAll()
+                tab.adsProviderName = ""
+            }
         }
 
         if InternalURL.isValid(url: url) {
@@ -392,28 +511,17 @@ extension BrowserViewController: WKNavigationDelegate {
         //            return
         //        }
 
-        // Second special case are a set of URLs that look like regular http links, but should be handed over to iOS
-        // instead of being loaded in the webview. Note that there is no point in calling canOpenURL() here, because
-        // iOS will always say yes.
-
-        if isAppleMapsURL(url) {
-            UIApplication.shared.open(url, options: [:])
-            decisionHandler(.cancel)
-            return
-        }
-
         if isStoreURL(url) {
             decisionHandler(.cancel)
 
             // Make sure to wait longer than delaySelectingNewPopupTab to ensure selectedTab is correct
             DispatchQueue.main.asyncAfter(deadline: .now() + tabManager.delaySelectingNewPopupTab + 0.1) {
-                guard let tab = self.tabManager.selectedTab else { return }
-                if tab.bars.isEmpty { // i.e. no snackbars are showing
-                    TimerSnackBar.showAppStoreConfirmationBar(forTab: tab, appStoreURL: url) { _ in
-                        // If a new window was opened for this URL (it will have no history), close it.
-                        if tab.historyList.isEmpty {
-                            self.tabManager.removeTabAndUpdateSelectedIndex(tab)
-                        }
+                // Show only if no other snack bar
+                guard let tab = self.tabManager.selectedTab, tab.bars.isEmpty else { return }
+                TimerSnackBar.showAppStoreConfirmationBar(forTab: tab, appStoreURL: url) { _ in
+                    // If a new window was opened for this URL (it will have no history), close it.
+                    if tab.historyList.isEmpty {
+                        self.tabManager.removeTab(tab)
                     }
                 }
             }
@@ -430,36 +538,27 @@ extension BrowserViewController: WKNavigationDelegate {
                 } else {
                     UIApplication.shared.open(url, options: [:])
                 }
-
-                LeanPlumClient.shared.track(event: .openedMailtoLink)
             }
 
             decisionHandler(.cancel)
             return
         }
 
-        // https://blog.mozilla.org/security/2017/11/27/blocking-top-level-navigations-data-urls-firefox-59/
-        if url.scheme == "data" {
-            let url = url.absoluteString
-            // Allow certain image types
-            if url.hasPrefix("data:image/") && !url.hasPrefix("data:image/svg+xml") {
-                decisionHandler(.allow)
-                return
-            }
+        // Handle Universal link for Firefox wallpaper setting
+        if isFirefoxUniversalWallpaperSetting(url) {
+            showWallpaperSettings()
+            decisionHandler(.cancel)
+            return
+        }
 
-            // Allow video, and certain application types
-            if url.hasPrefix("data:video/") || url.hasPrefix("data:application/pdf") || url.hasPrefix("data:application/json") {
-                decisionHandler(.allow)
-                return
-            }
+        let navigationHandler = WebViewNavigationHandlerImplementation(decisionHandler: decisionHandler)
+        if navigationHandler.shouldFilterDataScheme(url: url) {
+            navigationHandler.filterDataScheme(url: url, navigationAction: navigationAction)
+            return
+        }
 
-            // Allow plain text types.
-            // Note the format of data URLs is `data:[<media type>][;base64],<data>` with empty <media type> indicating plain text.
-            if url.hasPrefix("data:;base64,") || url.hasPrefix("data:,") || url.hasPrefix("data:text/plain,") || url.hasPrefix("data:text/plain;") {
-                decisionHandler(.allow)
-                return
-            }
-
+        // Handle keyboard shortcuts on link presses from webpage navigation (ex: Cmd + Tap on Link)
+        if #available(iOS 13.4, *), navigationAction.navigationType == .linkActivated, navigateLinkShortcutIfNeeded(url: url) {
             decisionHandler(.cancel)
             return
         }
@@ -480,7 +579,7 @@ extension BrowserViewController: WKNavigationDelegate {
             } else {
                 webView.customUserAgent = UserAgent.getUserAgent(domain: url.baseDomain ?? "")
             }
-            
+
             decisionHandler(.allow)
             return
         }
@@ -491,8 +590,8 @@ extension BrowserViewController: WKNavigationDelegate {
                 UIApplication.shared.open(url, options: [:]) { openedURL in
                     // Do not show error message for JS navigated links or redirect as it's not the result of a user action.
                     if !openedURL, navigationAction.navigationType == .linkActivated {
-                        let alert = UIAlertController(title: Strings.UnableToOpenURLErrorTitle, message: Strings.UnableToOpenURLError, preferredStyle: .alert)
-                        alert.addAction(UIAlertAction(title: Strings.OKString, style: .default, handler: nil))
+                        let alert = UIAlertController(title: .UnableToOpenURLErrorTitle, message: .UnableToOpenURLError, preferredStyle: .alert)
+                        alert.addAction(UIAlertAction(title: .OKString, style: .default, handler: nil))
                         self.present(alert, animated: true, completion: nil)
                     }
                 }
@@ -515,52 +614,63 @@ extension BrowserViewController: WKNavigationDelegate {
         // download via the context menu.
         let canShowInWebView = navigationResponse.canShowMIMEType && (webView != pendingDownloadWebView)
         let forceDownload = webView == pendingDownloadWebView
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
 
-        // Check if this response should be handed off to Passbook.
-        if let passbookHelper = OpenPassBookHelper(request: request, response: response, canShowInWebView: canShowInWebView, forceDownload: forceDownload, browserViewController: self) {
-            // Clear the network activity indicator since our helper is handling the request.
-            UIApplication.shared.isNetworkActivityIndicatorVisible = false
+        if OpenPassBookHelper.shouldOpenWithPassBook(response: response,
+                                                     forceDownload: forceDownload) {
+            self.passBookHelper = OpenPassBookHelper(response: response,
+                                                     cookieStore: cookieStore,
+                                                     presenter: self)
+            // Open our helper and nullifies the helper when done with it
+            self.passBookHelper?.open {
+                self.passBookHelper = nil
+            }
 
-            // Open our helper and cancel this response from the webview.
-            passbookHelper.open()
+            // Cancel this response from the webview.
             decisionHandler(.cancel)
             return
         }
 
-        if #available(iOS 12.0, *) {
-            // Check if this response should be displayed in a QuickLook for USDZ files.
-            if let previewHelper = OpenQLPreviewHelper(request: request, response: response, canShowInWebView: canShowInWebView, forceDownload: forceDownload, browserViewController: self) {
+        if OpenQLPreviewHelper.shouldOpenPreviewHelper(response: response,
+                                                       forceDownload: forceDownload),
+           let tab = tabManager[webView],
+           let request = request {
+            let previewHelper = OpenQLPreviewHelper(presenter: self)
+            // Certain files are too large to download before the preview presents,
+            // block and use a temporary document instead
+            tab.temporaryDocument = TemporaryDocument(preflightResponse: response,
+                                                      request: request)
+            let url = tab.temporaryDocument?.getURL().value
 
-                // Certain files are too large to download before the preview presents, block and use a temporary document instead
-                if let tab = tabManager[webView] {
-                    if navigationResponse.isForMainFrame, response.mimeType != MIMEType.HTML, let request = request {
-                        tab.temporaryDocument = TemporaryDocument(preflightResponse: response, request: request)
-                        previewHelper.url = tab.temporaryDocument!.getURL().value as NSURL
-
-                        // Open our helper and cancel this response from the webview.
-                        previewHelper.open()
-                        decisionHandler(.cancel)
-                        return
-                    } else {
-                        tab.temporaryDocument = nil
-                    }
-                }
-
+            if previewHelper.canOpen(url: url) {
+                // Open our helper and cancel this response from the webview.
+                previewHelper.open()
+                decisionHandler(.cancel)
+                return
+            } else {
+                tab.temporaryDocument = nil
                 // We don't have a temporary document, fallthrough
             }
         }
 
         // Check if this response should be downloaded.
-        if let downloadHelper = DownloadHelper(request: request, response: response, canShowInWebView: canShowInWebView, forceDownload: forceDownload, browserViewController: self) {
-            // Clear the network activity indicator since our helper is handling the request.
-            UIApplication.shared.isNetworkActivityIndicatorVisible = false
-
+        if let downloadHelper = DownloadHelper(request: request,
+                                               response: response,
+                                               cookieStore: cookieStore,
+                                               canShowInWebView: canShowInWebView,
+                                               forceDownload: forceDownload) {
             // Clear the pending download web view so that subsequent navigations from the same
             // web view don't invoke another download.
             pendingDownloadWebView = nil
 
+            let downloadAction: (HTTPDownload) -> Void = { [weak self] download in
+                self?.downloadQueue.enqueue(download)
+            }
+
             // Open our helper and cancel this response from the webview.
-            downloadHelper.open()
+            if let downloadViewModel = downloadHelper.downloadViewModel(okAction: downloadAction) {
+                presentSheetWith(viewModel: downloadViewModel, on: self, from: urlBar)
+            }
             decisionHandler(.cancel)
             return
         }
@@ -637,7 +747,8 @@ extension BrowserViewController: WKNavigationDelegate {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic ||
               challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPDigest ||
               challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodNTLM,
-              let tab = tabManager[webView] else {
+              let tab = tabManager[webView]
+        else {
             completionHandler(.performDefaultHandling, nil)
             return
         }
@@ -662,22 +773,60 @@ extension BrowserViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
-        guard let tab = tabManager[webView] else { return }
+        guard let tab = tabManager[webView],
+              let metadataManager = tab.metadataManager
+        else { return }
 
+        searchTelemetry?.trackTabAndTopSiteSAP(tab, webView: webView)
         tab.url = webView.url
+
+        // Only update search term data with valid search term data
+        if metadataManager.shouldUpdateSearchTermData(webViewUrl: webView.url?.absoluteString) {
+
+            if !tab.adsTelemetryRedirectUrlList.isEmpty,
+               !tab.adsProviderName.isEmpty,
+               !tab.adsTelemetryUrlList.isEmpty,
+               !tab.adsProviderName.isEmpty,
+               let startingRedirectHost = tab.startingSearchUrlWithAds?.host,
+               let lastRedirectHost = tab.adsTelemetryRedirectUrlList.last?.host,
+               lastRedirectHost != startingRedirectHost {
+
+                AdsTelemetryHelper.trackAdsClickedOnPage(providerName: tab.adsProviderName)
+                tab.adsTelemetryUrlList.removeAll()
+                tab.adsTelemetryRedirectUrlList.removeAll()
+                tab.adsProviderName = ""
+            }
+
+            updateObservationReferral(metadataManager: metadataManager, url: webView.url?.absoluteString, isPrivate: tab.isPrivate)
+        }
+
         // When tab url changes after web content starts loading on the page
-        // We notify the contect blocker change so that content blocker status can be correctly shown on beside the URL bar
+        // We notify the content blocker change so that content blocker status can be correctly shown on beside the URL bar
         tab.contentBlocker?.notifyContentBlockingChanged()
         self.scrollController.resetZoomState()
 
         if tabManager.selectedTab === tab {
-            updateUIForReaderHomeStateForTab(tab)
+            updateUIForReaderHomeStateForTab(tab, focusUrlBar: true)
         }
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        if let tab = tabManager[webView] {
+        if let tab = tabManager[webView],
+           let metadataManager = tab.metadataManager {
             navigateInTab(tab: tab, to: navigation, webViewStatus: .finishedNavigation)
+
+            // Only update search term data with valid search term data
+            if metadataManager.shouldUpdateSearchTermData(webViewUrl: webView.url?.absoluteString) {
+                updateObservationReferral(metadataManager: metadataManager, url: webView.url?.absoluteString, isPrivate: tab.isPrivate)
+            } else if !tab.isFxHomeTab {
+                let searchData = TabGroupData(searchTerm: metadataManager.tabGroupData.tabAssociatedSearchTerm,
+                                              searchUrl: webView.url?.absoluteString ?? "",
+                                              nextReferralUrl: "")
+                metadataManager.updateTimerAndObserving(state: .openURLOnly,
+                                                        searchData: searchData,
+                                                        tabTitle: webView.title,
+                                                        isPrivate: tab.isPrivate)
+            }
 
             // If this tab had previously crashed, wait 5 seconds before resetting
             // the consecutive crash counter. This allows a successful webpage load
@@ -691,5 +840,16 @@ extension BrowserViewController: WKNavigationDelegate {
                 }
             }
         }
+    }
+
+    private func updateObservationReferral(metadataManager: TabMetadataManager, url: String?, isPrivate: Bool) {
+        let searchData = TabGroupData(searchTerm: metadataManager.tabGroupData.tabAssociatedSearchTerm,
+                                      searchUrl: metadataManager.tabGroupData.tabAssociatedSearchUrl,
+                                      nextReferralUrl: url ?? "")
+        metadataManager.updateTimerAndObserving(
+            state: .tabNavigatedToDifferentUrl,
+            searchData: searchData,
+            isPrivate: isPrivate)
+
     }
 }

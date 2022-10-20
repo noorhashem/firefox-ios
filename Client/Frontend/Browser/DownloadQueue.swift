@@ -1,10 +1,11 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0
 
 import Foundation
+import WebKit
 
-protocol DownloadDelegate {
+protocol DownloadDelegate: AnyObject {
     func download(_ download: Download, didCompleteWithError error: Error?)
     func download(_ download: Download, didDownloadBytes bytesDownloaded: Int64)
     func download(_ download: Download, didFinishDownloadingTo location: URL)
@@ -39,7 +40,7 @@ class Download: NSObject {
 
         let basePath = downloadsPath.appendingPathComponent(filename)
         let fileExtension = basePath.pathExtension
-        let filenameWithoutExtension = fileExtension.count > 0 ? String(filename.dropLast(fileExtension.count + 1)) : filename
+        let filenameWithoutExtension = !fileExtension.isEmpty ? String(filename.dropLast(fileExtension.count + 1)) : filename
 
         var proposedPath = basePath
         var count = 0
@@ -65,6 +66,7 @@ class HTTPDownload: Download {
 
     fileprivate(set) var session: URLSession?
     fileprivate(set) var task: URLSessionDownloadTask?
+    fileprivate(set) var cookieStore: WKHTTPCookieStore
 
     private var resumeData: Data?
 
@@ -74,9 +76,13 @@ class HTTPDownload: Download {
         return string.components(separatedBy: allowed.inverted).joined()
      }
 
-    init(preflightResponse: URLResponse, request: URLRequest) {
+    init?(cookieStore: WKHTTPCookieStore, preflightResponse: URLResponse, request: URLRequest) {
+        self.cookieStore = cookieStore
         self.preflightResponse = preflightResponse
         self.request = request
+
+        // Verify scheme is a secure http or https scheme before moving forward with HTTPDownload initialization
+        guard let scheme = request.url?.scheme, (scheme == "http" || scheme == "https") else { return nil }
 
         super.init()
 
@@ -90,7 +96,7 @@ class HTTPDownload: Download {
 
         self.totalBytesExpected = preflightResponse.expectedContentLength > 0 ? preflightResponse.expectedContentLength : nil
 
-        self.session = URLSession(configuration: .default, delegate: self, delegateQueue: .main)
+        self.session = URLSession(configuration: .ephemeral, delegate: self, delegateQueue: .main)
         self.task = session?.downloadTask(with: request)
     }
 
@@ -105,13 +111,19 @@ class HTTPDownload: Download {
     }
 
     override func resume() {
-        guard let resumeData = self.resumeData else {
-            task?.resume()
-            return
-        }
+        cookieStore.getAllCookies { [self] cookies in
+            cookies.forEach { cookie in
+                session?.configuration.httpCookieStorage?.setCookie(cookie)
+            }
 
-        task = session?.downloadTask(withResumeData: resumeData)
-        task?.resume()
+            guard let resumeData = self.resumeData else {
+                self.task?.resume()
+                return
+            }
+
+            self.task = session?.downloadTask(withResumeData: resumeData)
+            self.task?.resume()
+        }
     }
 }
 
@@ -178,7 +190,7 @@ class BlobDownload: Download {
     }
 }
 
-protocol DownloadQueueDelegate {
+protocol DownloadQueueDelegate: AnyObject {
     func downloadQueue(_ downloadQueue: DownloadQueue, didStartDownload download: Download)
     func downloadQueue(_ downloadQueue: DownloadQueue, didDownloadCombinedBytes combinedBytesDownloaded: Int64, combinedTotalBytesExpected: Int64?)
     func downloadQueue(_ downloadQueue: DownloadQueue, download: Download, didFinishDownloadingTo location: URL)
@@ -244,9 +256,7 @@ class DownloadQueue {
 
 extension DownloadQueue: DownloadDelegate {
     func download(_ download: Download, didCompleteWithError error: Error?) {
-        guard let error = error, let index = downloads.firstIndex(of: download) else {
-            return
-        }
+        guard let error = error, let index = downloads.firstIndex(of: download) else { return }
 
         lastDownloadError = error
         downloads.remove(at: index)
@@ -262,9 +272,7 @@ extension DownloadQueue: DownloadDelegate {
     }
 
     func download(_ download: Download, didFinishDownloadingTo location: URL) {
-        guard let index = downloads.firstIndex(of: download) else {
-            return
-        }
+        guard let index = downloads.firstIndex(of: download) else { return }
 
         downloads.remove(at: index)
         delegate?.downloadQueue(self, download: download, didFinishDownloadingTo: location)
