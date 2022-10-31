@@ -26,7 +26,7 @@
 "ActivityStream.ContextMenu.UnpinTopsite" = "Адмацаваць";
 
 /* Title for the Jump Back In section. This section allows users to jump back in to a recently viewed tab */
-"ActivityStream.JumpBackIn.SectionTitle" = "Назад да";
+"ActivityStream.JumpBackIn.SectionTitle" = "Адкрыць зноў";
 
 /* On the Firefox homepage in the Jump Back In section, if a Tab group item - a collection of grouped tabs from a related search - exists underneath the search term for the tab group, there will be a subtitle with a number for how many tabs are in that group. The placeholder is for a number. It will read 'Tabs: 5' or similar. */
 "ActivityStream.JumpBackIn.TabGroup.SiteCount" = "Карткі: %d";
@@ -83,7 +83,7 @@
 "Back" = "Назад";
 
 /* Block pop-up windows setting */
-"Block Pop-up Windows" = "Блакаваць выплыўныя вокны";
+"Block Pop-up Windows" = "Блакаваць усплывальныя вокны";
 
 /* The label for the Title field when editing a bookmark */
 "Bookmark.DetailFieldTitle.Label" = "Загаловак";
@@ -125,7 +125,7 @@
 "BreachAlerts.BreachDate" = "Гэтая ўцечка адбылася";
 
 /* Description of what a breach is */
-"BreachAlerts.Description" = "З моманту апошняй змены вамім пароля на гэтым сайце адбылася ўцечка альбо крадзеж пароляў. Каб абараніць гэты акаўнт, увайдзіце на сайт і змяніце пароль.";
+"BreachAlerts.Description" = "З моманту апошняй змены вамі пароля адбылася ўцечка альбо крадзеж пароляў. Каб абараніць гэты ўліковы запіс, увайдзіце на сайт і змяніце пароль.";
 
 /* Link to monitor.firefox.com to learn more about breached passwords */
 "BreachAlerts.LearnMoreButton" = "Даведацца больш";
@@ -194,16 +194,16 @@
 "ContextMenu.ShareLinkButtonTitle" = "Падзяліцца спасылкай";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to existing users. It tells them that the search bar can now be moved to the bottom of the screen. */
-"ContextualHint.SearchBarPlacement.ExistingUsers" = "Цяпер вы можаце перанесці паліцу прылад уніз, каб было зручней уводзіць даныя";
+"ContextualHint.SearchBarPlacement.ExistingUsers" = "Цяпер вы можаце перанесці паліцу інструментаў уніз, каб было зручней уводзіць даныя";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to new users. It tells them that by default, the search bar will appear at the bottom of the device. */
-"ContextualHint.SearchBarPlacement.NewUsers" = "Каб было зручней уводзіць даныя, паліца прылад цяпер тыпова знаходзіцца ўнізе.";
+"ContextualHint.SearchBarPlacement.NewUsers" = "Каб было зручней уводзіць даныя, паліца інструментаў цяпер тыпова знаходзіцца ўнізе.";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one talks about the more personalized home feature. */
 "ContextualHints.FirefoxHomepage.JumpBackIn.PersonalizedHomeOldCopy.v106" = "Цяпер ваша персаналізаваная хатняя старонка Firefox палягчае працяг працы адтуль, дзе вы спыніліся. Знайдзіце свае апошнія карткі, закладкі і вынікі пошуку.";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one is a call to action for the popup describing search bar placement. It indicates a user can navigate to the settings page that allows them to customize the placement of the search bar. */
-"ContextualHints.SearchBarPlacement.CallToAction" = "Налады паліцы прылад";
+"ContextualHints.SearchBarPlacement.CallToAction" = "Налады паліцы інструментаў";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one talks about the inactive tabs feature. */
 "ContextualHints.TabTray.InactiveTabs" = "Карткі, якія вы не праглядалі на працягу двух тыдняў, будуць перанесеныя сюды.";
@@ -224,7 +224,7 @@
 "Could not load page." = "Немагчыма загрузіць старонку.";
 
 /* Description for the new ETP mode i.e. standard vs strict */
-"CoverSheet.v24.ETP.Description" = "Убудаваная ўзмоцненая ахова ад сачэння дапамагае спыніць рэкламу, якая вас пераследуе. Уключыце Строгую ахову каб заблакаваць яшчэ болей трэкераў, рэкламы і выплыўных вокнаў.";
+"CoverSheet.v24.ETP.Description" = "Убудаваная ўзмоцненая ахова ад сачэння дапамагае спыніць рэкламу, якая вас асочвае. Уключыце Строгую ахову каб заблакаваць яшчэ болей трэкераў, рэкламы і ўсплывальных вокнаў.";
 
 /* Text for the new ETP settings button */
 "CoverSheet.v24.ETP.Settings.Button" = "Перайсці ў налады";
@@ -308,7 +308,7 @@
 "ErrorPages.Advanced.Button" = "Дадаткова";
 
 /* Warning text when clicking the Advanced button on error pages */
-"ErrorPages.AdvancedWarning1.Text" = "Папярэджанне: мы не можам пацвердзіць, што ваша злучэнне з гэтым вэб-сайтам бяспечнаe.";
+"ErrorPages.AdvancedWarning1.Text" = "Папярэджанне: мы не можам пацвердзіць, што ваша злучэнне з гэтым вэб-сайтам бяспечнае.";
 
 /* Additional warning text when clicking the Advanced button on error pages */
 "ErrorPages.AdvancedWarning2.Text" = "Гэта можа быць праз няправільную канфігурацыю альбо праз атаку зламысніка. Працягвайце, калі вы прымаеце патэнцыйную рызыку.";
@@ -1097,7 +1097,7 @@
 "Search.ThirdPartyEngines.AddMessage" = "Новая пошукавая сістэма з'явіцца ў панэлі хуткага пошуку.";
 
 /* The success message that appears after a user sucessfully adds a new search engine */
-"Search.ThirdPartyEngines.AddSuccess" = "Дададзены пашукавік!";
+"Search.ThirdPartyEngines.AddSuccess" = "Пашукавік дададзены!";
 
 /* The title that asks the user to Add the search provider */
 "Search.ThirdPartyEngines.AddTitle" = "Дадаць пашукавік?";
@@ -1262,10 +1262,10 @@
 "Settings.Disconnect.CancelButton" = "Скасаваць";
 
 /* Destructive action button in alert when user is prompted for disconnect */
-"Settings.Disconnect.DestructiveButton" = "Адлучыцца";
+"Settings.Disconnect.DestructiveButton" = "Адлучыць";
 
 /* Title of the alert when prompting the user asking to disconnect. */
-"Settings.Disconnect.Title" = "Адлучыць?";
+"Settings.Disconnect.Title" = "Адлучыць Sync?";
 
 /* Section header for brightness slider. */
 "Settings.DisplayTheme.BrightnessThreshold.SectionHeader" = "Парог";
@@ -1331,7 +1331,7 @@
 "Settings.Home.Option.Description.v101" = "Выберыце, што будзе паказвацца на хатняй старонцы Firefox.";
 
 /* In the settings menu, in the Firefox homepage customization section, this is the title for the option that allows users to toggle the Jump Back In section on homepage on or off */
-"Settings.Home.Option.JumpBackIn" = "Перайсці назад да";
+"Settings.Home.Option.JumpBackIn" = "Адкрыць зноў";
 
 /* In the settings menu, in the Firefox homepage customization section, this is the title for the option that allows users to turn the Pocket Recommendations section on the Firefox homepage on or off */
 "Settings.Home.Option.Pocket" = "Рэкамендавана Pocket";
@@ -1607,7 +1607,7 @@
 "Settings.TrackingProtection.ProtectionLevelStandard.Description" = "Дазваляе некаторыя трэкеры для карэктнай працы вэб-сайтаў.";
 
 /* Description for strict level tracker protection */
-"Settings.TrackingProtection.ProtectionLevelStrict.Description" = "Блакуе больш трэкераў, рэкламы і выплыўных вокнаў. Старонкі загружаюцца хутчэй, але некаторыя функцыі могуць не працаваць.";
+"Settings.TrackingProtection.ProtectionLevelStrict.Description" = "Блакуе больш трэкераў, рэкламы і ўсплывальных вокнаў. Старонкі загружаюцца хутчэй, але некаторыя функцыі могуць не працаваць.";
 
 /* Title for tracking protection options section where level can be selected. */
 "Settings.TrackingProtection.ProtectionLevelTitle" = "Узровень абароны";
