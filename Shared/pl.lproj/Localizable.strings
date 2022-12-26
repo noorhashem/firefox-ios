@@ -917,7 +917,7 @@
 "Onboarding.LaterAction.v102" = "Nie teraz";
 
 /* String used to describes the description of what Firefox is on the Sync onboarding page for 106 version in our Onboarding screens. */
-"Onboarding.Sync.Description.v106" = "Otwieraj karty i pobierz hasła z innych urządzeń, aby kontynuować w tym samym miejscu.";
+"Onboarding.Sync.Description.v106" = "Otwieraj karty i pobierz hasła z innych urządzeń, by kontynuować w tym samym miejscu.";
 
 /* String used to describes the option to skip the Sync sign in during onboarding for 106 version in Firefox Onboarding screens. */
 "Onboarding.Sync.Skip.Action.v106" = "Pomiń";

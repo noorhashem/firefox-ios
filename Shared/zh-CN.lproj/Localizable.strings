@@ -395,7 +395,7 @@
 "fxa.signin.qr-link-instruction" = "在计算机上使用 Firefox 打开 firefox.com/pair";
 
 /* FxA sign in view qr code scan button */
-"fxa.signin.ready-to-scan" = "扫描就绪";
+"fxa.signin.ready-to-scan" = "立即扫码";
 
 /* FxA sign in view email login button */
 "fxa.signin.use-email-instead" = "改用电子邮件";
@@ -797,10 +797,10 @@
 "Menu.ReadingList.Label" = "阅读列表";
 
 /* Label for the button, displayed in the menu, used to reload the current website without Tracking Protection */
-"Menu.ReloadWithoutTrackingProtection.Title" = "重新加载，不使用跟踪保护";
+"Menu.ReloadWithoutTrackingProtection.Title" = "关闭跟踪保护并重新加载";
 
 /* Label for the button, displayed in the menu, used to reload the current website with Tracking Protection enabled */
-"Menu.ReloadWithTrackingProtection.Title" = "重新加载并附有跟踪保护";
+"Menu.ReloadWithTrackingProtection.Title" = "开启跟踪保护并重新加载";
 
 /* Toast displayed to the user after a bookmark has been removed. */
 "Menu.RemoveBookmark.Confirm" = "书签已移除";
