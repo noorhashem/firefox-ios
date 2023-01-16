@@ -53,13 +53,13 @@
 "Added page to Reading List" = "页面已添加到阅读列表";
 
 /* Button to dismiss the 'Add Pass Failed' alert.  See https://support.apple.com/HT204003 for context on Wallet. */
-"AddPass.Error.Dismiss" = "确定";
+"AddPass.Error.Dismiss" = "好";
 
 /* Text of the 'Add Pass Failed' alert.  See https://support.apple.com/HT204003 for context on Wallet. */
-"AddPass.Error.Message" = "添加密码到 Wallet 时出错。请稍后重试。";
+"AddPass.Error.Message" = "添加凭证到“钱包”时出错。请稍后重试。";
 
 /* Title of the 'Add Pass Failed' alert. See https://support.apple.com/HT204003 for context on Wallet. */
-"AddPass.Error.Title" = "添加密码失败";
+"AddPass.Error.Title" = "添加凭证失败";
 
 /* Accessibility label for address and search field, both words (Address, Search) are therefore nouns. */
 "Address and Search" = "网址与搜索";
@@ -192,15 +192,6 @@
 
 /* Context menu item for sharing a link URL */
 "ContextMenu.ShareLinkButtonTitle" = "分享链接";
-
-/* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to existing users. It tells them that the search bar can now be moved to the bottom of the screen. */
-"ContextualHint.SearchBarPlacement.ExistingUsers" = "您现在可以将工具栏移至底部，输入信息更轻松";
-
-/* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to new users. It tells them that by default, the search bar will appear at the bottom of the device. */
-"ContextualHint.SearchBarPlacement.NewUsers" = "为了使输入信息更轻松，现在起默认会将工具栏置于底部。";
-
-/* Contextual hints are little popups that appear for the users informing them of new features. This one talks about the more personalized home feature. */
-"ContextualHints.FirefoxHomepage.JumpBackIn.PersonalizedHomeOldCopy.v106" = "个性化的 Firefox 主页，让您可以更轻松地从上次中断的地方继续浏览。快速找到您最近打开的标签页、书签和搜索结果。";
 
 /* Contextual hints are little popups that appear for the users informing them of new features. This one is a call to action for the popup describing search bar placement. It indicates a user can navigate to the settings page that allows them to customize the placement of the search bar. */
 "ContextualHints.SearchBarPlacement.CallToAction" = "工具栏设置";
@@ -395,7 +386,7 @@
 "fxa.signin.qr-link-instruction" = "在计算机上使用 Firefox 打开 firefox.com/pair";
 
 /* FxA sign in view qr code scan button */
-"fxa.signin.ready-to-scan" = "扫描就绪";
+"fxa.signin.ready-to-scan" = "立即扫码";
 
 /* FxA sign in view email login button */
 "fxa.signin.use-email-instead" = "改用电子邮件";
@@ -797,10 +788,10 @@
 "Menu.ReadingList.Label" = "阅读列表";
 
 /* Label for the button, displayed in the menu, used to reload the current website without Tracking Protection */
-"Menu.ReloadWithoutTrackingProtection.Title" = "重新加载，不使用跟踪保护";
+"Menu.ReloadWithoutTrackingProtection.Title" = "关闭跟踪保护并重新加载";
 
 /* Label for the button, displayed in the menu, used to reload the current website with Tracking Protection enabled */
-"Menu.ReloadWithTrackingProtection.Title" = "重新加载并附有跟踪保护";
+"Menu.ReloadWithTrackingProtection.Title" = "开启跟踪保护并重新加载";
 
 /* Toast displayed to the user after a bookmark has been removed. */
 "Menu.RemoveBookmark.Confirm" = "书签已移除";
