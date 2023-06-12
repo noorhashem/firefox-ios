@@ -193,12 +193,6 @@
 /* Context menu item for sharing a link URL */
 "ContextMenu.ShareLinkButtonTitle" = "ᱞᱤᱝᱠ ᱦᱟᱹᱴᱤᱧᱟᱜ ᱢᱮ";
 
-/* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to existing users. It tells them that the search bar can now be moved to the bottom of the screen. */
-"ContextualHint.SearchBarPlacement.ExistingUsers" = "ᱱᱤᱛᱚᱜ ᱫᱚ ᱟᱢ ᱦᱟᱹᱛᱤᱭᱟᱨ ᱵᱟᱨ ᱞᱟᱛᱟᱨ ᱥᱮᱫ ᱩᱪᱟᱹᱲ ᱫᱟᱲᱮᱭᱟᱜᱼᱟᱢ, ᱢᱮᱱᱠᱷᱟᱱ ᱡᱤᱱᱤᱥ ᱟᱫᱮᱨ ᱟᱞᱜᱟᱜᱼᱟ ᱾";
-
-/* Contextual hints are little popups that appear for the users informing them of new features. This one introduces search bar placement to new users. It tells them that by default, the search bar will appear at the bottom of the device. */
-"ContextualHint.SearchBarPlacement.NewUsers" = "ᱡᱤᱱᱤᱥ ᱟᱫᱮᱨ ᱟᱞᱜᱟ ᱛᱮᱭᱟᱨ ᱞᱟᱹᱜᱤᱫ, ᱦᱟᱹᱛᱤᱭᱟᱹᱨ ᱵᱟᱨ ᱫᱚ ᱢᱩᱞ ᱦᱤᱥᱟᱹᱵᱽ ᱛᱮ ᱞᱟᱛᱟᱨ ᱨᱮ ᱢᱮᱱᱟᱜᱼᱟ ᱾";
-
 /* Contextual hints are little popups that appear for the users informing them of new features. This one is a call to action for the popup describing search bar placement. It indicates a user can navigate to the settings page that allows them to customize the placement of the search bar. */
 "ContextualHints.SearchBarPlacement.CallToAction" = "ᱦᱟᱹᱛᱤᱭᱟᱹᱨ ᱵᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱟᱡᱟᱣ ᱠᱚ";
 
@@ -348,9 +342,6 @@
 
 /* When a user taps and holds on an item from the Recently Visited section, this label will appear indicating the option to remove that item. */
 "FirefoxHome.RecentHistory.Remove" = "ᱚᱪᱚᱜᱽ ᱢᱮ";
-
-/* Label showing how many sites there is in a search group. %d represents a number */
-"FirefoxHomepage.Common.SitesCount.v101" = "ᱥᱟᱭᱤᱴ : %d";
 
 /* The title for the Settings context menu action for sponsored tiles in the Firefox home page shortcuts section. Clicking this brings the users to the Shortcuts Settings. */
 "FirefoxHomepage.ContextualMenu.Settings.v101" = "ᱥᱟᱡᱟᱣ ᱠᱚ";
@@ -901,36 +892,6 @@
 /* Restore Tabs Affirmative Action */
 "Okay" = "ᱴᱷᱤᱠ ᱜᱮ";
 
-/* Describes the action on the first onboarding page in our Onboarding screen. This string will be on a button so user can continue the onboarding. */
-"Onboarding.IntroAction.v102" = "ᱫᱮᱞᱟ ᱮᱛᱦᱚᱵ ᱞᱮᱜᱮ ᱵᱚᱱ";
-
-/* String used to describes what Firefox is on the first onboarding page in our Onboarding screens. Indie means small independant. */
-"Onboarding.IntroDescriptionPart1.v102" = "ᱥᱟᱹᱫᱷᱤᱱ ᱾ ᱵᱟᱝ ᱞᱟᱵᱷ ᱾ ᱵᱮᱥ ᱞᱟᱹᱜᱤᱫ ᱾";
-
-/* String used to describes what Firefox is on the first onboarding page in our Onboarding screens. */
-"Onboarding.IntroDescriptionPart2.v102" = "ᱡᱚᱛᱚ ᱦᱚᱲ ᱞᱟᱹᱜᱤᱫ ᱢᱤᱫ ᱱᱟᱯᱟᱭ ᱤᱱᱴᱟᱨᱱᱮᱴ ᱨᱮᱭᱟᱜ ᱩᱫᱩᱜ ᱞᱟ.ᱜᱤᱫ ᱴᱷᱟᱹᱣᱠᱟᱹ ᱾";
-
-/* Describes an action on some of the Onboarding screen, including the wallpaper onboarding screen. This string will be on a button so user can skip that onboarding page. */
-"Onboarding.LaterAction.v102" = "ᱱᱤᱛᱚᱜ ᱫᱚ ᱵᱟᱝᱟ";
-
-/* String used to describes the option to skip the Sync sign in during onboarding for 106 version in Firefox Onboarding screens. */
-"Onboarding.Sync.Skip.Action.v106" = "ᱟᱲᱟᱜ";
-
-/* Describes an action on the sync onboarding page in our Onboarding screens. This string will be on a button so user can sign up or login directly in the onboarding. */
-"Onboarding.SyncAction.v102" = "ᱥᱩᱦᱤ ᱮᱢ ᱢᱮ ᱟᱨ ᱵᱚᱞᱚᱱ ᱢᱮ";
-
-/* Description for the sync onboarding page in our Onboarding screens. The user will be able to setup their Firefox sync account from that screen. */
-"Onboarding.SyncDescription.v102" = "ᱟᱨᱟᱢ ᱥᱠᱨᱤᱱ ᱦᱚᱯᱤᱝ ᱞᱟᱹᱜᱤᱫ ᱟᱡ ᱛᱮ ᱡᱷᱚᱛᱚ ᱥᱟᱫᱷᱚᱱ ᱟᱨ ᱵᱩᱠᱢᱟᱨᱠ ᱠᱚ ᱟᱹᱭᱩᱨ ᱢᱤᱫ ᱠᱟᱜᱼᱟᱭ ᱾ ";
-
-/* Title for the sync onboarding page in our Onboarding screens. The user will be able to setup their Firefox sync account from that screen. 'Stay in the flow' means that a person is fully immersed in an activity. The user will sync with their Firefox sync account to stay connected and immersed in the activity they are doing. */
-"Onboarding.SyncTitle.v102" = "ᱟᱢᱟᱜ ᱯᱨᱚᱵᱷᱟᱣ ᱨᱮ ᱛᱟᱦᱮᱸ ᱞᱟᱹᱜᱤᱫ ᱥᱭᱝᱠ ᱢᱮ";
-
-/* Description for the wallpaper onboarding page in our Onboarding screens. This describes to the user that they can set a wallpaper. */
-"Onboarding.WallpaperAction.v102" = "ᱠᱟᱸᱛᱷᱪᱤᱛᱟᱹᱨ ᱥᱮᱴ ᱢᱮ";
-
-/* Title for the wallpaper onboarding page in our Onboarding screens. This describes to the user that they can choose different wallpapers. */
-"Onboarding.WallpaperTitle.v102" = "ᱢᱤᱫ Firefox ᱠᱟᱸᱛᱷᱪᱤᱛᱟᱹᱨ ᱵᱟᱪᱷᱟᱣ ᱢᱮ";
-
 /* On the onboarding card letting users know what's new in this version of Firefox, this is the title for the button, on the bottom of the card, used to get back to browsing on Firefox by dismissing the onboarding card */
 "Onboarding.WhatsNew.Button.Title" = "ᱯᱟᱱᱛᱮᱭᱟᱜ ᱮᱦᱚᱵ ᱢᱮ";
 
@@ -990,6 +951,12 @@
 
 /* Accessibility message e.g. spoken by VoiceOver when Reader Mode becomes available. */
 "ReaderMode.Available.VoiceOverAnnouncement" = "ᱯᱟᱲᱦᱟᱣ ᱚᱵᱚᱥᱛᱟ ᱢᱮᱱᱟ-ᱟ";
+
+/* Name for Mark as read button in reader mode */
+"ReaderModeBar.MarkAsRead.v106" = "ᱯᱟᱲᱦᱟᱣ ᱞᱮᱠᱟ ᱪᱤᱸᱦᱟᱭ ᱢᱮ";
+
+/* Name for Mark as unread button in reader mode */
+"ReaderModeBar.MarkAsUnread.v106" = "ᱵᱟᱲ ᱯᱟᱲᱦᱟᱣ ᱞᱮᱠᱟ ᱪᱤᱸᱦᱟᱭ ᱢᱮ";
 
 /* Panel accessibility label */
 "Reading list" = "ᱯᱟᱰᱦᱟᱣ ᱞᱤᱥᱴᱤ";
@@ -1354,8 +1321,23 @@
 /* In the settings menu, on the Firefox wallpaper customization screen, this is the title accessibility string for the twilight hills firefox wallpaper. */
 "Settings.Home.Option.Wallpaper.Accessibility.TwilightHillsWallpaper.v100" = "Firefox ᱞᱟᱴᱷᱟ ᱪᱤᱛᱟᱹᱨ, ᱵᱮᱲᱟ ᱦᱟᱹᱥᱩᱨ ᱵᱩᱨᱩ ᱨᱮᱭᱟᱜ ᱱᱟᱹᱢᱩᱱᱟ ᱾";
 
+/* In the settings menu, on the Firefox wallpaper customization screen, this is the title of the group of wallpapers that are always available to the user. The %@ will be replaced by the app name and thus doesn't need translation. */
+"Settings.Home.Option.Wallpaper.Classic.Title.v106" = "ᱠᱞᱟᱥᱤᱠ %@";
+
 /* In the settings menu, on the Firefox wallpaper customization screen, this is the title of the section that allows users to change the wallpaper settings for the application. */
 "Settings.Home.Option.Wallpaper.CollectionTitle" = "ᱯᱚᱨᱫᱟ ᱠᱷᱩᱞᱟᱹᱜ ᱠᱟᱱᱟ";
+
+/* In the settings menu, on the Firefox wallpaper customization screen, this is the button title of the group of wallpapers that are seasonally available to the user. */
+"Settings.Home.Option.Wallpaper.LearnMore.v106" = "ᱰᱷᱮᱨ ᱥᱮᱬᱟᱭ ᱢᱮ";
+
+/* In the settings menu, on the Firefox wallpaper customization screen, this is the default description of the group of wallpapers that are seasonally available to the user. */
+"Settings.Home.Option.Wallpaper.LimitedEdition.Default.Description.v106" = "ᱱᱟᱶᱟ ᱛᱩᱢᱟᱹᱞ ᱪᱮᱥᱴᱟ ᱵᱤᱲᱟᱹᱣ ᱢᱮ ᱾";
+
+/* In the settings menu, on the Firefox wallpaper customization screen, this is the description of the group of wallpapers that are seasonally available to the user. */
+"Settings.Home.Option.Wallpaper.LimitedEdition.IndependentVoices.Description.v106" = "ᱱᱟᱶᱟ ᱥᱟᱫᱤᱱ ᱨᱚᱲ ᱛᱩᱢᱟᱹᱞ ᱾";
+
+/* In the settings menu, on the Firefox wallpaper customization screen, this is the title of the group of wallpapers that are seasonally available to the user. */
+"Settings.Home.Option.Wallpaper.LimitedEdition.Title.v106" = "ᱥᱤᱢᱤᱛ ᱮᱰᱤᱥᱚᱱ";
 
 /* In the settings menu, on the Firefox wallpaper customization screen, this is the string titling the switch button's function, which allows a user to toggle wallpaper switching from the homepage logo on or off. */
 "Settings.Home.Option.Wallpaper.SwitchTitle.v99" = "Firefox ᱚᱲᱟᱜ ᱥᱟᱦᱴᱟ ᱞᱚᱜᱚ ᱨᱮ ᱴᱤᱯᱟᱹᱣ ᱠᱟᱛᱮ ᱞᱟᱴᱷᱟ ᱪᱤᱛᱟᱹᱨ ᱵᱚᱫᱚᱞ ᱢᱮ";
@@ -1534,9 +1516,6 @@
 /* Dismiss button for the tracker protection alert. */
 "Settings.TrackingProtection.Alert.Button" = "ᱴᱷᱤᱠ, ᱭᱟᱢᱮᱱᱟ";
 
-/* Decription for the tracker protection alert. */
-"Settings.TrackingProtection.Alert.Description" = "ᱥᱟᱭᱤᱡ ᱡᱮᱞᱡᱠᱟ ᱞᱟᱸᱢᱤ ᱠᱟᱛᱷᱟ ᱵᱟᱭ ᱠᱟᱹᱢᱤ ᱞᱮᱫᱟᱭ, ᱡᱟᱹᱱᱠᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱤᱞᱰ ᱨᱮ ᱴᱤᱯᱹᱟᱣ ᱢᱮ ᱟᱨ ᱥᱟᱠᱟᱢ ᱞᱟᱹᱜᱤᱫ ᱵᱟᱲᱦᱟᱣᱟᱠᱟᱱ ᱯᱟᱧᱡᱟ ᱫᱟᱱᱟᱲ ᱪᱤᱱᱦᱟᱹ ᱟᱰ ᱵᱚᱸᱫᱚᱭ ᱢᱮ ᱾";
-
 /* Title for the tracker protection alert. */
 "Settings.TrackingProtection.Alert.Title" = "ᱵᱚᱦᱚ ᱪᱦᱚᱴ ᱥᱮ!";
 
@@ -1548,9 +1527,6 @@
 
 /* Additional information about your Enhanced Tracking Protection */
 "Settings.TrackingProtection.ProtectionCellFooter" = "ᱴᱟᱨᱜᱮᱴ ᱰᱷᱟᱣᱨᱟᱹ ᱠᱚᱢ ᱟᱭ ᱟᱨ ᱰᱷᱟᱣᱨᱟᱸ ᱠᱚ ᱜᱷᱮᱨ ᱮᱥᱮᱫ ᱠᱷᱚᱱ ᱵᱚᱸᱫᱚ ᱞᱟᱹᱜᱤᱫ ᱜᱚᱲᱚ ᱮᱢᱟᱭ ᱾";
-
-/* Footer information for tracker protection level. */
-"Settings.TrackingProtection.ProtectionLevel.Footer" = "ᱥᱟᱭᱤᱡ ᱡᱮᱞᱡᱠᱟ ᱞᱟᱸᱢᱤ ᱠᱟᱛᱷᱟ ᱵᱟᱭ ᱠᱟᱹᱢᱤ ᱞᱮᱫᱟᱭ, ᱡᱟᱹᱱᱠᱟᱨ ᱨᱮᱭᱟᱜ ᱥᱤᱞᱰ ᱨᱮ ᱴᱤᱯᱹᱟᱣ ᱢᱮ ᱟᱨ ᱥᱟᱠᱟᱢ ᱞᱟᱹᱜᱤᱫ ᱵᱟᱲᱦᱟᱣᱟᱠᱟᱱ ᱯᱟᱧᱡᱟ ᱫᱟᱱᱟᱲ ᱪᱤᱱᱦᱟᱹ ᱟᱰ ᱵᱚᱸᱫᱚᱭ ᱢᱮ ᱾";
 
 /* Description for standard level tracker protection */
 "Settings.TrackingProtection.ProtectionLevelStandard.Description" = "ᱰᱷᱟᱣᱨᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱠᱤᱪᱷᱤ ᱜᱷᱮᱨ ᱮᱥᱮᱫ ᱢᱟᱸᱡᱩᱨ ᱮᱢᱟᱭ ᱠᱤᱪᱷᱤ ᱣᱮᱵᱥᱟᱭᱤᱴ ᱠᱟᱫᱢᱤ ᱟᱭ";
@@ -1756,14 +1732,29 @@
 /* Accessibility label for unread article in reading list. It's a past participle - functions as an adjective. */
 "unread" = "ᱵᱟᱝ ᱯᱟᱲᱦᱟᱣ";
 
-/* Describes an action on the sync upgrade page in our Upgrade screens. This string will be on a button so user can sign up or login directly in the upgrade. */
-"Upgrade.SyncSign.Action.v106" = "ᱵᱚᱞᱚᱱ ᱥᱩᱦᱤ";
-
 /* Debug option */
 "Use stage servers" = "Stage ᱥᱚᱨᱵᱷᱚᱨ ᱠᱚ ᱵᱮᱵᱷᱟᱨ ᱢᱮ";
 
 /* Username textbox in Authentication prompt */
 "Username" = "ᱵᱮᱵᱷᱟᱨᱤᱡᱟᱠ ᱧᱩᱛᱩᱢ";
+
+/* The message of the error displayed to a user when they trying to change a wallpaper failed. */
+"Wallpaper.Change.Error.Body.v106" = "ᱱᱚᱶᱟ ᱠᱟᱱᱛᱷᱪᱤᱛᱟᱹᱨ ᱥᱟᱞᱟᱜ ᱵᱷᱩᱞ ᱦᱩᱭᱮᱱᱟ ᱾";
+
+/* The title of the error displayed when changing wallpaper fails. */
+"Wallpaper.Change.Error.Title.v106" = "ᱠᱟᱱᱛᱷᱪᱤᱛᱟᱹᱨ ᱵᱚᱫᱚᱞ ᱵᱟᱭ ᱜᱟᱱ ᱞᱮᱱᱟ";
+
+/* The message of the error displayed to a user when they try change a wallpaper that failed downloading. */
+"Wallpaper.Download.Error.Body.v106" = "ᱟᱢᱟᱜ ᱰᱟᱩᱱᱞᱚᱰ ᱥᱟᱞᱟᱜ ᱵᱷᱩᱞ ᱦᱩᱭᱮᱱᱟ ᱾";
+
+/* The title of the error displayed if download fails when changing a wallpaper. */
+"Wallpaper.Download.Error.Title.v106" = "ᱠᱟᱱᱛᱷᱪᱤᱛᱟᱹᱨ ᱰᱟᱩᱱᱞᱳᱰ ᱵᱟᱭ ᱜᱟᱱ ᱞᱮᱱᱟ";
+
+/* An action for the error displayed to a user when they trying to change a wallpaper failed. */
+"Wallpaper.Error.Dismiss.v106" = "ᱵᱟᱹᱰᱨᱟᱹ";
+
+/* Action displayed when changing wallpaper fails. */
+"Wallpaper.Error.TryAgain.v106" = "ᱫᱩᱦᱲᱟᱹ ᱠᱩᱨᱩᱢᱩᱴᱩ";
 
 /* Accessibility label for the main web content view */
 "Web content" = "ᱣᱮᱵ ᱵᱤᱥᱳᱭ";
