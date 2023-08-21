@@ -1,0 +1,27 @@
+/* Button string to learn how to set your default browser. */
+"DefaultBrowserCard.Button.v2" = "Aprender como";
+
+/* Description for small home tab banner shown that allows user to switch their default browser to Firefox. */
+"DefaultBrowserCard.Description" = "Estableza ligazóns de sitios web, correos electrónicos e mensaxes para que se abran automaticamente en Firefox.";
+
+/* Title for small home tab banner shown that allows user to switch their default browser to Firefox. */
+"DefaultBrowserCard.Title" = "Cambia o teu navegador predeterminado";
+
+/* Button string to open settings that allows user to switch their default browser to Firefox. */
+"DefaultBrowserOnboarding.Button" = "Ir á configuración";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description1" = "1. Ir á configuración";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description2" = "2. Pulse a Aplicación do navegador por defecto";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description3" = "3. Seleccione Firefox";
+
+/* Text for the screenshot of the iOS system settings page for Firefox. */
+"DefaultBrowserOnboarding.Screenshot" = "Aplicación de navegador predeterminada";
+
+/* Menu option for setting Firefox as default browser. */
+"Settings.DefaultBrowserMenuItem" = "Estabelecer como navegador predeterminado";
+
