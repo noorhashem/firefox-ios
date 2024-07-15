@@ -1,0 +1,27 @@
+/* Button string to learn how to set your default browser. */
+"DefaultBrowserCard.Button.v2" = "ଶିଖନ୍ତୁ କିପରି";
+
+/* Description for small home tab banner shown that allows user to switch their default browser to Firefox. */
+"DefaultBrowserCard.Description" = "Firefoxରେ ସ୍ୱତଃସ୍ପୃତ ଭାବେ ଖୋଲିବାକୁ ୱେବସାଇଟ୍, ଇମେଲ୍ ଏବଂ ମେସେଜଗୁଡିକରୁ ଲିଙ୍କ୍ ସେଟ୍ କରନ୍ତୁ।";
+
+/* Title for small home tab banner shown that allows user to switch their default browser to Firefox. */
+"DefaultBrowserCard.Title" = "ଆପଣଙ୍କ ଡିଫଲ୍ଟ ବ୍ରାଉଜର୍ ବଦଳାନ୍ତୁ";
+
+/* Button string to open settings that allows user to switch their default browser to Firefox. */
+"DefaultBrowserOnboarding.Button" = "ସଂରଚନାକୁ ଯାଆନ୍ତୁ";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description1" = "1. ସଂରଚନାକୁ ଯାଆନ୍ତୁ";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description2" = "2. ଡିଫଲ୍ଟ ବ୍ରାଉଜର ଆପ୍ ଟ୍ୟାପ୍ କରନ୍ତୁ";
+
+/* Description for default browser onboarding card. */
+"DefaultBrowserOnboarding.Description3" = "3. Firefox ଚୟନ କରନ୍ତୁ";
+
+/* Text for the screenshot of the iOS system settings page for Firefox. */
+"DefaultBrowserOnboarding.Screenshot" = "ପୂର୍ବନିର୍ଦ୍ଧାରିତ ବ୍ରାଉଜର ଆପ";
+
+/* Menu option for setting Firefox as default browser. */
+"Settings.DefaultBrowserMenuItem" = "ଡିଫଲ୍ଟ ବ୍ରାଉଜର ଭାବେ ସ୍ଥାପନ କରନ୍ତୁ";
+
