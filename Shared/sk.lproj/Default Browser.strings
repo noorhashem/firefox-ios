@@ -2,7 +2,7 @@
 "DefaultBrowserCard.Button.v2" = "Ďalšie informácie";
 
 /* Description for small home tab banner shown that allows user to switch their default browser to Firefox. */
-"DefaultBrowserCard.Description" = "Nastavte si automatické otváranie webových stránok, e-mailov a správ vo Firefoxe.";
+"DefaultBrowserCard.Description" = "Nastavte si automatické otváranie webových stránok, e‑mailov a správ vo Firefoxe.";
 
 /* Title for small home tab banner shown that allows user to switch their default browser to Firefox. */
 "DefaultBrowserCard.Title" = "Zmeňte svoj predvolený prehliadač";
