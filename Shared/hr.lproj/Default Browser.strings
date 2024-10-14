@@ -14,13 +14,13 @@
 "DefaultBrowserOnboarding.Description1" = "1. Idi u Postavke";
 
 /* Description for default browser onboarding card. */
-"DefaultBrowserOnboarding.Description2" = "2. Dodirni Zadana aplikacija preglednika";
+"DefaultBrowserOnboarding.Description2" = "2. Dodirni standardni preglednik";
 
 /* Description for default browser onboarding card. */
 "DefaultBrowserOnboarding.Description3" = "3. Odaberi Firefox";
 
 /* Text for the screenshot of the iOS system settings page for Firefox. */
-"DefaultBrowserOnboarding.Screenshot" = "Zadana aplikacija preglednika";
+"DefaultBrowserOnboarding.Screenshot" = "Standardni preglednik";
 
 /* Menu option for setting Firefox as default browser. */
 "Settings.DefaultBrowserMenuItem" = "Postavi kao standardni preglednik";
